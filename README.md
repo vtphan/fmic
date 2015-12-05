@@ -41,7 +41,7 @@ s-e+1 is the number of occurrences of the pattern in the indexed sequence.
 
 ## Features
 
+- Should work with sequences with fewer than 2^63 characters.
 - User-definable compresion ratio as a trade off between size of index and search time.
 - Multiple goroutines to save/load index quickly.
-- Should work with sequences longer than 4GB.
 - Suffix array is built quickly using the SAIS algorithm.
