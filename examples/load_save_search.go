@@ -32,8 +32,8 @@ func main() {
 	uncompressed_idx := fmi.New(os.Args[1])
 	var x,y,z,x1,y1,z1 int
 	for i:=0; i<100000; i++ {
-		a := rand.Int63n(saved_idx.LEN)
-		b := rand.Int63n(saved_idx.LEN)
+		a := rand.Int63n(int64(saved_idx.LEN))
+		b := rand.Int63n(int64(saved_idx.LEN))
 		if a!=b {
 			if a > b {
 				a, b = b, a
@@ -44,7 +44,7 @@ func main() {
 			x1,y1,z1 = uncompressed_idx.Search(seq)
 			// fmt.Println(x,y,z, x==x1, y==y1, z==z1)
 			if x!=x1 || y!=y1 || z!=z1 {
-				fmt.Println(i, a, b, x,y,z, x1,y1,z1)
+				fmt.Println("Panic:", i, a, b, x,y,z, x1,y1,z1)
 				panic("Something is wrong")
 			}
 			if i%10000 == 0 {

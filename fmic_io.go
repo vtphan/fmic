@@ -15,8 +15,6 @@ import (
 	"sync"
 )
 
-var NUM_BYTES uint = 8
-
 type Symb_OCC struct {
 	Symb int
 	OCC  []indexType
@@ -203,35 +201,12 @@ func _load_slice(filename string, length indexType) []indexType {
 
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
-	for i := 0; scanner.Scan(); i++ {
-		// convert 8 consecutive bytes to a int64 number
-		v[i] = indexType(scanner.Bytes()[0])
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 8
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 16
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 24
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 32
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 40
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 48
-		scanner.Scan()
-		v[i] += indexType(scanner.Bytes()[0]) << 56
+	for i, b := 0,uint(0); scanner.Scan(); b++ {
+		if b==NUM_BYTES {
+			b, i = 0, i+1
+		}
+		v[i] += indexType(scanner.Bytes()[0]) << (b*8)
 	}
-	// var i int = 0
-	// var b uint = 0
-	// for scanner.Scan() {
-	// 	v[i] = indexType(scanner.Bytes()[0]) << (b*8)
-	// 	fmt.Println(">>>", i, b, v[i])
-	// 	b++
-	// 	if b==NUM_BYTES {
-	// 		b = 0
-	// 		i++
-	// 	}
-	// }
 	return v
 }
 //-----------------------------------------------------------------------------
