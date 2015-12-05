@@ -21,7 +21,7 @@ func main() {
 	idx.Check()
 
 	fmt.Println("======SAVING INDEX")
-	idx.SaveCompressedIndex()
+	idx.SaveCompressedIndex(0)
 
 	fmt.Println("======RELOADING INDEX")
 	saved_idx := fmic.LoadCompressedIndex(os.Args[1] + ".fmi")
@@ -31,7 +31,7 @@ func main() {
 	fmt.Println("======TEST SEARCH")
 	uncompressed_idx := fmi.New(os.Args[1])
 	var x,y,z,x1,y1,z1 int
-	for i:=0; i<500000; i++ {
+	for i:=0; i<100000; i++ {
 		a := rand.Int63n(saved_idx.LEN)
 		b := rand.Int63n(saved_idx.LEN)
 		if a!=b {
@@ -47,7 +47,7 @@ func main() {
 				fmt.Println(i, a, b, x,y,z, x1,y1,z1)
 				panic("Something is wrong")
 			}
-			if i%100000 == 0 {
+			if i%10000 == 0 {
 				fmt.Println("finish testing", i, "random substring searches.")
 			}
 		}

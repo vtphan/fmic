@@ -16,7 +16,7 @@ func main() {
 	idx.Show()
 	idx.Check()
 	fmt.Println("======SAVING INDEX")
-	idx.SaveCompressedIndex()
+	idx.SaveCompressedIndex(0)
 
 	fmt.Println("======RELOADING INDEX")
 	saved_idx := fmic.LoadCompressedIndex(os.Args[1] + ".fmi")

@@ -36,17 +36,12 @@ type IndexC struct {
 // Build FM index given the file storing the text.
 func CompressedIndex(file string, compression_ratio int) *IndexC {
 	I := new(IndexC)
-	I.M = compression_ratio
-	I.SEQ = ReadFasta(file)
-	I.build_suffix_array()
-	I.build_bwt_fmindex()
 	I.input_file = file
-	return I
-}
+	I.M = compression_ratio
+	// GET THE SEQUENCE
+	I.SEQ = ReadFasta(file)
 
-//-----------------------------------------------------------------------------
-// BWT is saved into a separate file
-func (I *IndexC) build_suffix_array() {
+	// BUILD SUFFIX ARRAY
 	I.LEN = int64(len(I.SEQ))
 	I.OCC_SIZE = int64(math.Ceil(float64(I.LEN/int64(I.M))))+1
 	I.SA = make([]int64, I.LEN)
@@ -56,10 +51,8 @@ func (I *IndexC) build_suffix_array() {
 	for i := range SA {
 		I.SA[i] = int64(SA[i])
 	}
-}
 
-//-----------------------------------------------------------------------------
-func (I *IndexC) build_bwt_fmindex() {
+	// BUILD BWT
 	I.Freq = make(map[byte]int64)
 	I.BWT = make([]byte, I.LEN)
 	var i int64
@@ -75,6 +68,7 @@ func (I *IndexC) build_bwt_fmindex() {
 		}
 	}
 
+	// BUILD COUNT AND OCCURENCE TABLE
 	I.C = make(map[byte]int64)
 	I.OCC = make(map[byte][]int64)
 	for c := range I.Freq {
@@ -101,6 +95,8 @@ func (I *IndexC) build_bwt_fmindex() {
 			}
 		}
 	}
+
+	return I
 }
 
 //-----------------------------------------------------------------------------
@@ -153,6 +149,7 @@ func (I *IndexC) Show() {
 }
 //-----------------------------------------------------------------------------
 func (I *IndexC) Check() {
+	fmt.Println("Checking...")
 	for i:=0; i<len(I.SYMBOLS); i++ {
 		c := byte(I.SYMBOLS[i])
 		fmt.Printf("%c%6d %6d  [", c, I.Freq[c], I.C[c])
@@ -161,8 +158,10 @@ func (I *IndexC) Check() {
 		}
 		fmt.Printf("]\n")
 	}
-	a, b, c := I.Search(I.SEQ[0 : len(I.SEQ)-1])
-	fmt.Println("Search for SEQ returns", a, b, c)
+	if len(I.SEQ) > 0 {
+		a, b, c := I.Search(I.SEQ[0 : len(I.SEQ)-1])
+		fmt.Println("Search for SEQ returns", a, b, c)
+	}
 }
 
 //-----------------------------------------------------------------------------
