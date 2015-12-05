@@ -44,4 +44,4 @@ s, e, _ := saved_idx.Search(pattern)
 - Should work with sequences with fewer than 2^63 (or ~9223 quadrillion) characters.
 - User-definable compresion ratio as a trade off between size of index and search time.
 - Multiple goroutines to save/load index quickly.
-- Suffix array is built quickly using the SAIS algorithm.
+- Suffix array is built quickly using the SAIS algorithm. (Go's built-in suffix array is slow.)
