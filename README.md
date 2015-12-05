@@ -29,6 +29,16 @@ The index is stored in a directory named "input_sequence_file.fmi", where "input
 	saved_idx := fmic.LoadCompressedIndex(index_directory)
 ```
 
+## Query search
+
+API is subject to change.
+
+```
+s, e, _ := saved_idx.Search(pattern)
+```
+s-e+1 is the number of occurrences of the pattern in the indexed sequence.
+
+
 ## Features
 
 - User-definable compresion ratio as a trade off between size of index and search time.
