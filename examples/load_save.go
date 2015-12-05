@@ -12,7 +12,7 @@ func main() {
 	if len(os.Args) != 2 {
 		panic("Usage: go run program.go file.fasta")
 	}
-	idx := fmic.CompressedIndex(os.Args[1], 16)
+	idx := fmic.CompressedIndex(os.Args[1], 10)
 	idx.Show()
 	idx.Check()
 	fmt.Println("======SAVING INDEX")
