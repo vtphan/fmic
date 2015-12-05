@@ -15,9 +15,11 @@ import (
 	"sync"
 )
 
+var NUM_BYTES uint = 8
+
 type Symb_OCC struct {
 	Symb int
-	OCC  []int64
+	OCC  []indexType
 }
 
 //-----------------------------------------------------------------------------
@@ -54,7 +56,7 @@ func ReadFasta(file string) []byte {
 //-----------------------------------------------------------------------------
 // Save the index to directory.
 
-func _save_slice(s []int64, filename string) {
+func _save_slice(s []indexType, filename string) {
 	f, err := os.Create(filename)
 	check_for_error(err)
 	defer f.Close()
@@ -133,15 +135,15 @@ func LoadCompressedIndex(dir string) *IndexC {
 	defer f.Close()
 
 	var symb byte
-	var freq, c, ep int64
+	var freq, c, ep indexType
 	var save_option int
 	scanner := bufio.NewScanner(f)
 	scanner.Scan()
 	fmt.Sscanf(scanner.Text(), "%d%d%d%d%d\n", &I.LEN, &I.OCC_SIZE, &I.END_POS, &I.M, &save_option)
 
-	I.Freq = make(map[byte]int64)
-	I.C = make(map[byte]int64)
-	I.EP = make(map[byte]int64)
+	I.Freq = make(map[byte]indexType)
+	I.C = make(map[byte]indexType)
+	I.EP = make(map[byte]indexType)
 	for scanner.Scan() {
 		fmt.Sscanf(scanner.Text(), "%c%d%d%d", &symb, &freq, &c, &ep)
 		I.SYMBOLS = append(I.SYMBOLS, int(symb))
@@ -149,7 +151,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	}
 
 	// Second, load Suffix array, BWT and OCC
-	I.OCC = make(map[byte][]int64)
+	I.OCC = make(map[byte][]indexType)
 	var wg sync.WaitGroup
 	wg.Add(len(I.SYMBOLS) + 3)
 
@@ -192,34 +194,44 @@ func LoadCompressedIndex(dir string) *IndexC {
 }
 
 //-----------------------------------------------------------------------------
-func _load_slice(filename string, length int64) []int64 {
+func _load_slice(filename string, length indexType) []indexType {
 	f, err := os.Open(filename)
 	check_for_error(err)
 	defer f.Close()
 
-	v := make([]int64, length)
+	v := make([]indexType, length)
+
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
 	for i := 0; scanner.Scan(); i++ {
 		// convert 8 consecutive bytes to a int64 number
-		v[i] = int64(scanner.Bytes()[0])
+		v[i] = indexType(scanner.Bytes()[0])
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 8
+		v[i] += indexType(scanner.Bytes()[0]) << 8
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 16
+		v[i] += indexType(scanner.Bytes()[0]) << 16
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 24
+		v[i] += indexType(scanner.Bytes()[0]) << 24
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 32
+		v[i] += indexType(scanner.Bytes()[0]) << 32
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 40
+		v[i] += indexType(scanner.Bytes()[0]) << 40
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 48
+		v[i] += indexType(scanner.Bytes()[0]) << 48
 		scanner.Scan()
-		v[i] += int64(scanner.Bytes()[0]) << 56
+		v[i] += indexType(scanner.Bytes()[0]) << 56
 	}
-	// r := bufio.NewReader(f)
-	// binary.Read(r, binary.LittleEndian, v)
+	// var i int = 0
+	// var b uint = 0
+	// for scanner.Scan() {
+	// 	v[i] = indexType(scanner.Bytes()[0]) << (b*8)
+	// 	fmt.Println(">>>", i, b, v[i])
+	// 	b++
+	// 	if b==NUM_BYTES {
+	// 		b = 0
+	// 		i++
+	// 	}
+	// }
 	return v
 }
 //-----------------------------------------------------------------------------

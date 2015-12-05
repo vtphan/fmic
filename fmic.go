@@ -10,6 +10,8 @@ import (
 	"math"
 )
 
+type indexType int64
+
 //-----------------------------------------------------------------------------
 // Global variables: sequence (SEQ), suffix array (SA), BWT, FM index (C, OCC)
 //-----------------------------------------------------------------------------
@@ -17,17 +19,17 @@ import (
 type IndexC struct {
 	SEQ []byte
 	BWT []byte
-	SA  []int64          // suffix array
-	C   map[byte]int64   // count table
-	OCC map[byte][]int64 // occurence table
+	SA  []indexType          // suffix array
+	C   map[byte]indexType   // count table
+	OCC map[byte][]indexType // occurence table
 
-	END_POS int64          // position of "$" in the text
+	END_POS indexType          // position of "$" in the text
 	SYMBOLS []int          // sorted symbols
-	EP      map[byte]int64 // ending row/position of each symbol
+	EP      map[byte]indexType // ending row/position of each symbol
 
-	LEN  int64
-	OCC_SIZE int64
-	Freq map[byte]int64 // Frequency of each symbol
+	LEN  indexType
+	OCC_SIZE indexType
+	Freq map[byte]indexType // Frequency of each symbol
 	M int             // Compression ratio
 	input_file string
 }
@@ -42,20 +44,20 @@ func CompressedIndex(file string, compression_ratio int) *IndexC {
 	I.SEQ = ReadFasta(file)
 
 	// BUILD SUFFIX ARRAY
-	I.LEN = int64(len(I.SEQ))
-	I.OCC_SIZE = int64(math.Ceil(float64(I.LEN/int64(I.M))))+1
-	I.SA = make([]int64, I.LEN)
+	I.LEN = indexType(len(I.SEQ))
+	I.OCC_SIZE = indexType(math.Ceil(float64(I.LEN/indexType(I.M))))+1
+	I.SA = make([]indexType, I.LEN)
 	SA := make([]int, I.LEN)
 	ws := &WorkSpace{}
 	ws.ComputeSuffixArray(I.SEQ, SA)
 	for i := range SA {
-		I.SA[i] = int64(SA[i])
+		I.SA[i] = indexType(SA[i])
 	}
 
 	// BUILD BWT
-	I.Freq = make(map[byte]int64)
+	I.Freq = make(map[byte]indexType)
 	I.BWT = make([]byte, I.LEN)
-	var i int64
+	var i indexType
 	for i = 0; i < I.LEN; i++ {
 		I.Freq[I.SEQ[i]]++
 		if I.SA[i] == 0 {
@@ -69,16 +71,16 @@ func CompressedIndex(file string, compression_ratio int) *IndexC {
 	}
 
 	// BUILD COUNT AND OCCURENCE TABLE
-	I.C = make(map[byte]int64)
-	I.OCC = make(map[byte][]int64)
+	I.C = make(map[byte]indexType)
+	I.OCC = make(map[byte][]indexType)
 	for c := range I.Freq {
 		I.SYMBOLS = append(I.SYMBOLS, int(c))
-		I.OCC[c] = make([]int64, I.OCC_SIZE)
+		I.OCC[c] = make([]indexType, I.OCC_SIZE)
 		I.C[c] = 0
 	}
 	sort.Ints(I.SYMBOLS)
-	I.EP = make(map[byte]int64)
-	count := make(map[byte]int64)
+	I.EP = make(map[byte]indexType)
+	count := make(map[byte]indexType)
 
 	for j := 1; j < len(I.SYMBOLS); j++ {
 		curr_c, prev_c := byte(I.SYMBOLS[j]), byte(I.SYMBOLS[j-1])
@@ -100,10 +102,10 @@ func CompressedIndex(file string, compression_ratio int) *IndexC {
 }
 
 //-----------------------------------------------------------------------------
-func (I *IndexC) Occurence(c byte, pos int64) int64 {
-	i := int64(pos/int64(I.M))
+func (I *IndexC) Occurence(c byte, pos indexType) indexType {
+	i := indexType(pos/indexType(I.M))
 	count := I.OCC[c][i]
-	for j:=i*int64(I.M)+1; j<=pos; j++ {
+	for j:=i*indexType(I.M)+1; j<=pos; j++ {
 		if I.BWT[j]==c {
 			count += 1
 		}
@@ -114,7 +116,7 @@ func (I *IndexC) Occurence(c byte, pos int64) int64 {
 //-----------------------------------------------------------------------------
 // Returns starting, ending positions (sp, ep) and last-matched position (i)
 func (I *IndexC) Search(pattern []byte) (int, int, int) {
-	var offset int64
+	var offset indexType
 	var i int
 	start_pos := len(pattern) - 1
 	c := pattern[start_pos]
@@ -154,7 +156,7 @@ func (I *IndexC) Check() {
 		c := byte(I.SYMBOLS[i])
 		fmt.Printf("%c%6d %6d  [", c, I.Freq[c], I.C[c])
 		for j:=0; j<int(I.LEN); j++ {
-			fmt.Printf("%d ", I.Occurence(c,int64(j)))
+			fmt.Printf("%d ", I.Occurence(c,indexType(j)))
 		}
 		fmt.Printf("]\n")
 	}
