@@ -24,9 +24,9 @@ The index is stored in a directory named "input_sequence_file.fmi", where "input
 
 SavedCompressedIndex takes as input a save_option, which has value 0, 1, or 2:
 
-	- 0: suffix array and seq were not saved
-	- 1: suffix array was saved; seq was not
-	- 2: both suffix array and seq were saved
+- 0: suffix array and seq were not saved
+- 1: suffix array was saved; seq was not
+- 2: both suffix array and seq were saved
 
 ## Load an index that was previously saved
 
