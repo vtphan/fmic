@@ -6,7 +6,7 @@ Uncompressed FM index.
 	idx := fmic.CompressedIndex(sequence_of_bytes, 10)
 ```
 
-Create an FM index with compression ratio 10.  Larger the compression ratios result in linearly smaller indexes and linearly longer search.
+Create an FM index with compression ratio 10.  Larger compression ratios result in linearly smaller indexes and linearly longer search.
 
 ## Save the index
 
