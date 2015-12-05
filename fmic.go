@@ -11,7 +11,7 @@ import (
 )
 
 type indexType int64
-var NUM_BYTES = uint(8)
+var NUM_BYTES = uint(8)     // number of bytes of indexType
 
 //-----------------------------------------------------------------------------
 // Global variables: sequence (SEQ), suffix array (SA), BWT, FM index (C, OCC)
