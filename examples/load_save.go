@@ -1,0 +1,30 @@
+package main
+
+import (
+	"github.com/vtphan/fmi"
+	"github.com/vtphan/fmic"
+	"os"
+	"fmt"
+)
+
+//-----------------------------------------------------------------------------
+func main() {
+	if len(os.Args) != 2 {
+		panic("Usage: go run program.go file.fasta")
+	}
+	idx := fmic.CompressedIndex(os.Args[1], 16)
+	idx.Show()
+	idx.Check()
+	fmt.Println("======SAVING INDEX")
+	idx.SaveCompressedIndex()
+
+	fmt.Println("======RELOADING INDEX")
+	saved_idx := fmic.LoadCompressedIndex(os.Args[1] + ".fmi")
+	saved_idx.Show()
+	saved_idx.Check()
+
+	fmt.Println("======UNCOMPRESSED INDEX")
+	uncompressed_idx := fmi.New(os.Args[1])
+	uncompressed_idx.Show()
+	uncompressed_idx.Check()
+}
