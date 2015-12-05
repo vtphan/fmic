@@ -23,6 +23,7 @@ Create an FM index with compression ratio 10.  Larger compression ratios result 
 The index is stored in a directory named "input_sequence_file.fmi", where "input_sequence_file" is the name of the input sequence file.
 
 SavedCompressedIndex takes as input a save_option, which has value 0, 1, or 2:
+
 	- 0: suffix array and seq were not saved
 	- 1: suffix array was saved; seq was not
 	- 2: both suffix array and seq were saved
