@@ -23,8 +23,9 @@ The index is stored in a directory named "input_sequence_file.fmi", where "input
 	saved_idx := fmic.LoadCompressedIndex(index_directory)
 ```
 
-## Unobvious features
+## Features
 
-- Multiple goroutines to save index quickly.
+- User-definable compresion ratio as a trade off between size of index and search time.
+- Multiple goroutines to save/load index quickly.
 - Should work with sequences longer than 4GB.
 - Suffix array is built optimally using the SAIS algorithm.
