@@ -1,4 +1,4 @@
-Relatively efficient implementation of uncompressed FM index.  Search is optimally linear in query length.  Index size can be compressed; how much compression is specified by users.
+Relatively efficient implementation of uncompressed FM index.  Construction is optimally linear.  Search is optimally linear in query length.  Index size can be compressed; how much compression is specified by users.
 
 ## Create FM index from sequence
 
