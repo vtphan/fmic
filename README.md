@@ -36,7 +36,7 @@ API is subject to change.
 ```
 s, e, _ := saved_idx.Search(pattern)
 ```
-s-e+1 is the number of occurrences of the pattern in the indexed sequence.
+**e-s+1** is the number of occurrences of the pattern in the indexed sequence.
 
 
 ## Features
