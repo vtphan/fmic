@@ -6,7 +6,6 @@ package fmic
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
@@ -25,30 +24,6 @@ func check_for_error(e error) {
 	if e != nil {
 		panic(e)
 	}
-}
-//-----------------------------------------------------------------------------
-func ReadFasta(file string) []byte {
-	f, err := os.Open(file)
-	check_for_error(err)
-	defer f.Close()
-
-	if file[len(file)-6:] != ".fasta" {
-		panic("ReadFasta:" + file + "is not a fasta file.")
-	}
-
-	scanner := bufio.NewScanner(f)
-	byte_array := make([]byte, 0)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		if len(line) > 0 {
-			if line[0] != '>' {
-				byte_array = append(byte_array, bytes.Trim(line, "\n\r ")...)
-			} else if len(byte_array) > 0 {
-				byte_array = append(byte_array, byte('|'))
-			}
-		}
-	}
-	return append(byte_array, byte('$'))
 }
 
 //-----------------------------------------------------------------------------
@@ -162,7 +137,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	go func() {
 		defer wg.Done()
 		if save_option == 1 || save_option == 2 {
-			I.SA = _load_slice(path.Join(dir, "sa"), I.LEN)
+			I.SA = _load_slice(path.Join(dir, "sa"), I.LEN, indexTypeBytes)
 		}
 	}()
 	go func() {
@@ -177,7 +152,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	for _, symb := range I.SYMBOLS {
 		go func(symb int) {
 			defer wg.Done()
-			Symb_OCC_chan <- Symb_OCC{symb, _load_slice(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE)}
+			Symb_OCC_chan <- Symb_OCC{symb, _load_slice(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE, indexTypeBytes)}
 		}(symb)
 	}
 	go func() {
@@ -192,7 +167,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 }
 
 //-----------------------------------------------------------------------------
-func _load_slice(filename string, length indexType) []indexType {
+func _load_slice(filename string, length indexType, numBytes uint) []indexType {
 	f, err := os.Open(filename)
 	check_for_error(err)
 	defer f.Close()
@@ -202,7 +177,7 @@ func _load_slice(filename string, length indexType) []indexType {
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
 	for i, b := 0,uint(0); scanner.Scan(); b++ {
-		if b==NUM_BYTES {
+		if b==numBytes {
 			b, i = 0, i+1
 		}
 		v[i] += indexType(scanner.Bytes()[0]) << (b*8)

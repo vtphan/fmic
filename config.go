@@ -7,5 +7,12 @@ package fmic
 
 type indexType int64
 
-// NUM_BYTES is the number of bytes of indexType
-const NUM_BYTES = uint(8)
+// The number of bytes of indexType
+const indexTypeBytes = uint(8)
+
+// The number of sequences to be indexed together must be storable by a regionType
+// For example, use uint16 if there are no more than 2^16 sequences to be indexed at once.
+type regionType uint16
+
+// The number of bytes of regionType
+const regionTypeBytes = 2

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/vtphan/fmi"
-	"github.com/vtphan/fmic"
 	"os"
+	"github.com/vtphan/fmic"
+	"github.com/vtphan/fmi"
 	"fmt"
 )
 
@@ -16,7 +16,7 @@ func main() {
 	idx.Show()
 	idx.Check()
 	fmt.Println("======SAVING INDEX")
-	idx.SaveCompressedIndex(0)
+	idx.SaveCompressedIndex(2)
 
 	fmt.Println("======RELOADING INDEX")
 	saved_idx := fmic.LoadCompressedIndex(os.Args[1] + ".fmi")
