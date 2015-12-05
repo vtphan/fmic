@@ -28,4 +28,4 @@ The index is stored in a directory named "input_sequence_file.fmi", where "input
 - User-definable compresion ratio as a trade off between size of index and search time.
 - Multiple goroutines to save/load index quickly.
 - Should work with sequences longer than 4GB.
-- Suffix array is built optimally using the SAIS algorithm.
+- Suffix array is built quickly using the SAIS algorithm.
