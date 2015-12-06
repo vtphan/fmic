@@ -56,10 +56,14 @@ See examples/guess_sequence.go
 	seq, count, _ := saved_idx.GuessSequence([]byte(q))
 ```
 
+Return values:
 - seq: the id of the sequence most likely contains the query q.
 - count: the occurences of the query q in the sequence.
 
-The assumption is that q must occur in one of the sequences.  But q might be slightly different (e.g. due to sequencing error or genetic variation).
+Assumptions:
+
++ q must occur in one of the sequences.
++ But q might be slightly different (e.g. due to sequencing error or genetic variation).
 
 ## Features
 
