@@ -29,7 +29,17 @@ func check_for_error(e error) {
 //-----------------------------------------------------------------------------
 // Save the index to directory.
 
-func _save_slice(s []indexType, filename string) {
+func _save_indexType(s []indexType, filename string) {
+	f, err := os.Create(filename)
+	check_for_error(err)
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	err = binary.Write(w, binary.LittleEndian, s)
+	check_for_error(err)
+	w.Flush()
+}
+
+func _save_sequenceType(s []sequenceType, filename string) {
 	f, err := os.Create(filename)
 	check_for_error(err)
 	defer f.Close()
@@ -50,7 +60,7 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 	os.Mkdir(dir, 0777)
 
 	var wg sync.WaitGroup
-	wg.Add(len(I.SYMBOLS) + 3)
+	wg.Add(len(I.SYMBOLS) + 4)
 
 	go func() {
 		defer wg.Done()
@@ -60,8 +70,13 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 
 	go func() {
 		defer wg.Done()
+		_save_sequenceType(I.SSA, path.Join(dir, "ssa"))
+	}()
+
+	go func() {
+		defer wg.Done()
 		if save_option == 1 || save_option == 2 {
-			_save_slice(I.SA, path.Join(dir, "sa"))
+			_save_indexType(I.SA, path.Join(dir, "sa"))
 		}
 	}()
 
@@ -76,7 +91,7 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 	for symb := range I.OCC {
 		go func(symb byte) {
 			defer wg.Done()
-			_save_slice(I.OCC[symb], path.Join(dir, "occ."+string(symb)))
+			_save_indexType(I.OCC[symb], path.Join(dir, "occ."+string(symb)))
 		}(symb)
 	}
 
@@ -84,7 +99,7 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 	check_for_error(err)
 	defer f.Close()
 	w := bufio.NewWriter(f)
-	fmt.Fprintf(w, "%d %d %d %d %d\n", I.LEN, I.OCC_SIZE, I.END_POS, I.M, save_option)
+	fmt.Fprintf(w, "%d %d %d %d %t %d\n", I.LEN, I.OCC_SIZE, I.END_POS, I.M, I.Multiple, save_option)
 	for i := 0; i < len(I.SYMBOLS); i++ {
 		symb := byte(I.SYMBOLS[i])
 		fmt.Fprintf(w, "%s %d %d %d\n", string(symb), I.Freq[symb], I.C[symb], I.EP[symb])
@@ -112,7 +127,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	var save_option int
 	scanner := bufio.NewScanner(f)
 	scanner.Scan()
-	fmt.Sscanf(scanner.Text(), "%d%d%d%d%d\n", &I.LEN, &I.OCC_SIZE, &I.END_POS, &I.M, &save_option)
+	fmt.Sscanf(scanner.Text(), "%d%d%d%d%t%d\n", &I.LEN, &I.OCC_SIZE, &I.END_POS, &I.M, &I.Multiple, &save_option)
 
 	I.Freq = make(map[byte]indexType)
 	I.C = make(map[byte]indexType)
@@ -126,7 +141,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	// Second, load Suffix array, BWT and OCC
 	I.OCC = make(map[byte][]indexType)
 	var wg sync.WaitGroup
-	wg.Add(len(I.SYMBOLS) + 3)
+	wg.Add(len(I.SYMBOLS) + 4)
 
 	go func() {
 		defer wg.Done()
@@ -136,10 +151,16 @@ func LoadCompressedIndex(dir string) *IndexC {
 
 	go func() {
 		defer wg.Done()
+		I.SSA = _load_sequenceType(path.Join(dir, "ssa"), I.LEN, sequenceTypeBytes)
+	}()
+
+	go func() {
+		defer wg.Done()
 		if save_option == 1 || save_option == 2 {
-			I.SA = _load_slice(path.Join(dir, "sa"), I.LEN, indexTypeBytes)
+			I.SA = _load_indexType(path.Join(dir, "sa"), I.LEN, indexTypeBytes)
 		}
 	}()
+
 	go func() {
 		defer wg.Done()
 		if save_option == 2 {
@@ -152,7 +173,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	for _, symb := range I.SYMBOLS {
 		go func(symb int) {
 			defer wg.Done()
-			Symb_OCC_chan <- Symb_OCC{symb, _load_slice(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE, indexTypeBytes)}
+			Symb_OCC_chan <- Symb_OCC{symb, _load_indexType(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE, indexTypeBytes)}
 		}(symb)
 	}
 	go func() {
@@ -167,7 +188,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 }
 
 //-----------------------------------------------------------------------------
-func _load_slice(filename string, length indexType, numBytes uint) []indexType {
+func _load_indexType(filename string, length indexType, numBytes uint) []indexType {
 	f, err := os.Open(filename)
 	check_for_error(err)
 	defer f.Close()
@@ -184,4 +205,24 @@ func _load_slice(filename string, length indexType, numBytes uint) []indexType {
 	}
 	return v
 }
+
+//-----------------------------------------------------------------------------
+func _load_sequenceType(filename string, length indexType, numBytes uint) []sequenceType {
+	f, err := os.Open(filename)
+	check_for_error(err)
+	defer f.Close()
+
+	v := make([]sequenceType, length)
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanBytes)
+	for i, b := 0,uint(0); scanner.Scan(); b++ {
+		if b==numBytes {
+			b, i = 0, i+1
+		}
+		v[i] += sequenceType(scanner.Bytes()[0]) << (b*8)
+	}
+	return v
+}
+
 //-----------------------------------------------------------------------------

@@ -21,10 +21,9 @@ type IndexC struct {
 	SEQ []byte
 	BWT []byte
 	SA  []indexType          // suffix array
+	SSA []sequenceType		    // SSA[i] stores the sequence containing position SA[i]
 	C   map[byte]indexType   // count table
 	OCC map[byte][]indexType // occurence table
-	REGION []regionType		 // REGION[i] stores the region contains the suffix at SA[i]
-	tmpREGION []regionType
 
 	END_POS indexType          // position of "$" in the text
 	SYMBOLS []int          // sorted symbols
@@ -34,15 +33,20 @@ type IndexC struct {
 	OCC_SIZE indexType
 	Freq map[byte]indexType // Frequency of each symbol
 	M int             // Compression ratio
+	Multiple bool		// True if the input contains multiple sequences
 	input_file string
 }
 
 //-----------------------------------------------------------------------------
 // Build FM index given the file storing the text.
-func CompressedIndex(file string, compression_ratio int) *IndexC {
+// multiple is true if the input file contains multiple sequences
+// compression ratio >=1
+//-----------------------------------------------------------------------------
+func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC {
 	I := new(IndexC)
 	I.input_file = file
 	I.M = compression_ratio
+	I.Multiple = multiple
 
 	// GET THE SEQUENCE
 	I.ReadFasta(file)
@@ -51,17 +55,22 @@ func CompressedIndex(file string, compression_ratio int) *IndexC {
 	I.LEN = indexType(len(I.SEQ))
 	I.OCC_SIZE = indexType(math.Ceil(float64(I.LEN/indexType(I.M))))+1
 	I.SA = make([]indexType, I.LEN)
-	I.REGION = make([]regionType, I.LEN)
-	I.tmpREGION = make([]regionType, I.LEN)
+	var SID []sequenceType
+	if I.Multiple {
+		I.SSA = make([]sequenceType, I.LEN)
+		SID = make([]sequenceType, I.LEN)
+	}
 	SA := make([]int, I.LEN)
 	ws := &WorkSpace{}
 	ws.ComputeSuffixArray(I.SEQ, SA)
-	region := regionType(0)
+	sid := sequenceType(0)
 	for i := range SA {
 		I.SA[i] = indexType(SA[i])
-		I.tmpREGION[i] = region
-		if I.SEQ[i] == '|' {
-			region++
+		if I.Multiple {
+			SID[i] = sid
+			if I.SEQ[i] == '|' {
+				sid++
+			}
 		}
 	}
 
@@ -79,7 +88,9 @@ func CompressedIndex(file string, compression_ratio int) *IndexC {
 		if I.BWT[i] == '$' {
 			I.END_POS = i
 		}
-		I.REGION[i] = I.tmpREGION[I.SA[i]]
+		if I.Multiple {
+			I.SSA[i] = SID[I.SA[i]]
+		}
 	}
 
 	// BUILD COUNT AND OCCURENCE TABLE
@@ -144,7 +155,10 @@ func (I *IndexC) Search(pattern []byte) (int, int, int) {
 }
 
 //-----------------------------------------------------------------------------
-func (I *IndexC) SearchRegion(pattern []byte) (int, int, int) {
+func (I *IndexC) GuessSequence(pattern []byte) (int, int, int) {
+	if ! I.Multiple {
+		return 0, -1, -1
+	}
 	var offset indexType
 	var i int
 	start_pos := len(pattern) - 1
@@ -154,6 +168,7 @@ func (I *IndexC) SearchRegion(pattern []byte) (int, int, int) {
 		panic("Unknown character: " + string(c))
 	}
 	ep := I.EP[c]
+	// fmt.Println(ep-sp+1, "\t", i, string(c), len(pattern))
 	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
 		c = pattern[i]
 		offset, ok = I.C[c]
@@ -162,15 +177,15 @@ func (I *IndexC) SearchRegion(pattern []byte) (int, int, int) {
 		}
 		sp = offset + I.Occurence(c,sp-1)
 		ep = offset + I.Occurence(c,ep) - 1
+		// fmt.Println(ep-sp+1, "\t", i, string(c), len(pattern))
 	}
-	// fmt.Println(sp, ep, i)
 	if sp <= ep {
 		for j:=sp+1; j<=ep; j++ {
-			if I.REGION[j] != I.REGION[sp] {
+			if I.SSA[j] != I.SSA[sp] {
 				return -1, int(ep-sp+1), i
 			}
 		}
-		return int(I.REGION[sp]), int(ep-sp+1), i
+		return int(I.SSA[sp]), int(ep-sp+1), i
 	} else {
 		return -1, int(ep-sp+1), i
 	}
@@ -219,14 +234,10 @@ func (I *IndexC) Show() {
 	for i := 0; i < len(I.BWT); i++ {
 		fmt.Print(string(I.BWT[i]))
 	}
-	fmt.Printf("\ntmpREGION ")
-	for i:=0 ; i<len(I.tmpREGION); i++ {
-		fmt.Printf("%d ", I.tmpREGION[i])
-	}
 	fmt.Println()
-	fmt.Printf("\nREGION ")
-	for i:=0 ; i<len(I.REGION); i++ {
-		fmt.Printf("%d ", I.REGION[i])
+	fmt.Printf("\nSSA ")
+	for i:=0 ; i<len(I.SSA); i++ {
+		fmt.Printf("%d ", I.SSA[i])
 	}
 	fmt.Println()
 	fmt.Println("SEQ", string(I.SEQ))

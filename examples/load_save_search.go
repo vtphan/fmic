@@ -16,7 +16,7 @@ func main() {
 		panic("Usage: go run program.go file.fasta")
 	}
 	fmt.Println("======BUILDING INDEX")
-	idx := fmic.CompressedIndex(os.Args[1], 10)
+	idx := fmic.CompressedIndex(os.Args[1], true, 10)
 	idx.Show()
 	idx.Check()
 

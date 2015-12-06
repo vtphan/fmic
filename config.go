@@ -12,7 +12,7 @@ const indexTypeBytes = uint(8)
 
 // The number of sequences to be indexed together must be storable by a regionType
 // For example, use uint16 if there are no more than 2^16 sequences to be indexed at once.
-type regionType uint16
+type sequenceType uint16
 
 // The number of bytes of regionType
-const regionTypeBytes = 2
+const sequenceTypeBytes = 2
