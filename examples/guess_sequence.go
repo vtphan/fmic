@@ -31,10 +31,10 @@ func main() {
 	}
 	fmt.Println("region\tmatches\ti\tquery")
 	for _, q := range(queries) {
-		region, count, j := saved_idx.GuessSequence([]byte(q))
-		fmt.Println(region,"\t",count,"\t",j,"\t",q)
-		region, count, j = idx.GuessSequence([]byte(q))
-		fmt.Println(region,"\t",count,"\t",j,"\t",q)
+		seq, count, j := saved_idx.GuessSequence([]byte(q))
+		fmt.Println(seq,"\t",count,"\t",j,"\t",q)
+		seq, count, j = idx.GuessSequence([]byte(q))
+		fmt.Println(seq,"\t",count,"\t",j,"\t",q)
 	}
 	fmt.Println()
 }
