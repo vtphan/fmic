@@ -9,10 +9,14 @@ import "github.com/vtphan/fmic"
 ## Create FM index from sequence
 
 ```
-	idx := fmic.CompressedIndex(sequence_of_bytes, 10)
+	idx := fmic.CompressedIndex(sequence_of_bytes, true, 10)
 ```
 
-Create an FM index with compression ratio 10.  Larger compression ratios result in linearly smaller indexes and linearly longer search.
+Arguments:
+
+1. Name of file that stores the sequence(s).
+2. true if there are multiple sequences in the file.
+3. compression ration. Larger compression ratios result in linearly smaller indexes and linearly longer search.
 
 ## Save the index
 
@@ -43,6 +47,19 @@ s, e, _ := saved_idx.Search(pattern)
 ```
 **e-s+1** is the number of occurrences of the pattern in the indexed sequence.
 
+
+## Guess which sequence contains a query
+
+See examples/guess_sequence.go
+
+```
+	seq, count, _ := saved_idx.GuessSequence([]byte(q))
+```
+
+- seq: the id of the sequence most likely contains the query q.
+- count: the occurences of the query q in the sequence.
+
+The assumption is that q must occur in one of the sequences.  But q might be slightly different (e.g. due to sequencing error or genetic variation).
 
 ## Features
 
