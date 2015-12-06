@@ -63,7 +63,7 @@ Return values:
 Assumptions:
 
 + q must occur in one of the sequences.
-+ But q might be slightly different (e.g. due to sequencing error or genetic variation).
++ But q might be slightly changed (e.g. due to sequencing error or genetic variation).
 
 ## Features
 
