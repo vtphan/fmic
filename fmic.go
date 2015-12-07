@@ -5,12 +5,13 @@
 package fmic
 
 import (
-	"fmt"
-	"sort"
-	"math"
-	"bytes"
-	"os"
 	"bufio"
+	"bytes"
+	"fmt"
+	"math"
+	"math/rand"
+	"os"
+	"sort"
 )
 
 //-----------------------------------------------------------------------------
@@ -21,19 +22,19 @@ type IndexC struct {
 	SEQ []byte
 	BWT []byte
 	SA  []indexType          // suffix array
-	SSA []sequenceType		    // SSA[i] stores the sequence containing position SA[i]
+	SSA []sequenceType       // SSA[i] stores the sequence containing position SA[i]
 	C   map[byte]indexType   // count table
 	OCC map[byte][]indexType // occurence table
 
 	END_POS indexType          // position of "$" in the text
-	SYMBOLS []int          // sorted symbols
+	SYMBOLS []int              // sorted symbols
 	EP      map[byte]indexType // ending row/position of each symbol
 
-	LEN  indexType
-	OCC_SIZE indexType
-	Freq map[byte]indexType // Frequency of each symbol
-	M int             // Compression ratio
-	Multiple bool		// True if the input contains multiple sequences
+	LEN        indexType
+	OCC_SIZE   indexType
+	Freq       map[byte]indexType // Frequency of each symbol
+	M          int                // Compression ratio
+	Multiple   bool               // True if the input contains multiple sequences
 	input_file string
 }
 
@@ -53,7 +54,7 @@ func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC 
 
 	// BUILD SUFFIX ARRAY
 	I.LEN = indexType(len(I.SEQ))
-	I.OCC_SIZE = indexType(math.Ceil(float64(I.LEN/indexType(I.M))))+1
+	I.OCC_SIZE = indexType(math.Ceil(float64(I.LEN/indexType(I.M)))) + 1
 	I.SA = make([]indexType, I.LEN)
 	var SID []sequenceType
 	if I.Multiple {
@@ -114,7 +115,7 @@ func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC 
 
 	for j := 0; j < len(I.BWT); j++ {
 		count[I.BWT[j]] += 1
-		if j % I.M == 0 {
+		if j%I.M == 0 {
 			for symbol := range I.OCC {
 				I.OCC[symbol][int(j/I.M)] = count[symbol]
 			}
@@ -126,68 +127,97 @@ func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC 
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) Occurence(c byte, pos indexType) indexType {
-	i := indexType(pos/indexType(I.M))
+	i := indexType(pos / indexType(I.M))
 	count := I.OCC[c][i]
-	for j:=i*indexType(I.M)+1; j<=pos; j++ {
-		if I.BWT[j]==c {
+	for j := i*indexType(I.M) + 1; j <= pos; j++ {
+		if I.BWT[j] == c {
 			count += 1
 		}
 	}
 	return count
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // Returns starting, ending positions (sp, ep) and last-matched position (i)
-func (I *IndexC) Search(pattern []byte) (int, int, int) {
-	var offset indexType
-	var i int
-	start_pos := len(pattern) - 1
-	c := pattern[start_pos]
-	sp := I.C[c]
-	ep := I.EP[c]
-	for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
-		c = pattern[i]
-		offset = I.C[c]
-		sp = offset + I.Occurence(c,sp-1)
-		ep = offset + I.Occurence(c,ep) - 1
-	}
-	return int(sp), int(ep), i + 1
-}
 
-//-----------------------------------------------------------------------------
-func (I *IndexC) GuessSequence(pattern []byte) (int, int, int) {
-	if ! I.Multiple {
-		return 0, -1, -1
-	}
+func (I *IndexC) Search(query []byte) (int, int) {
 	var offset indexType
 	var i int
-	start_pos := len(pattern) - 1
-	c := pattern[start_pos]
+	start_pos := len(query) - 1
+	c := query[start_pos]
 	sp, ok := I.C[c]
 	if !ok {
 		panic("Unknown character: " + string(c))
 	}
 	ep := I.EP[c]
-	// fmt.Println(ep-sp+1, "\t", i, string(c), len(pattern))
+	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
 	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
-		c = pattern[i]
+		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
 			panic("Unknown character: " + string(c))
 		}
-		sp = offset + I.Occurence(c,sp-1)
-		ep = offset + I.Occurence(c,ep) - 1
-		// fmt.Println(ep-sp+1, "\t", i, string(c), len(pattern))
+		sp = offset + I.Occurence(c, sp-1)
+		ep = offset + I.Occurence(c, ep) - 1
+		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
 	}
-	if sp <= ep {
-		for j:=sp+1; j<=ep; j++ {
-			if I.SSA[j] != I.SSA[sp] {
-				return -1, int(ep-sp+1), i
+	return int(sp), int(ep)
+}
+
+//-----------------------------------------------------------------------------
+// Guess which sequence contains the query.
+// If randomized_round is 0, there is no randomization. The search begins at the.
+//-----------------------------------------------------------------------------
+
+func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
+	var seq, count int
+	if randomized_round == 0 {
+		seq, count, _ = I._guess(query, len(query)-1)
+		return seq, count
+	} else {
+		for i := 0; i < randomized_round; i++ {
+			seq, count, _ = I._guess(query, rand.Intn(len(query)))
+			if seq >= 0 {
+				return seq, count
 			}
 		}
-		return int(I.SSA[sp]), int(ep-sp+1), i
+		return -1, 0
+	}
+}
+
+//-----------------------------------------------------------------------------
+func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
+	if !I.Multiple {
+		return 0, -1, -1
+	}
+	var offset indexType
+	var i int
+	c := query[start_pos]
+	sp, ok := I.C[c]
+	if !ok {
+		panic("Unknown character: " + string(c))
+	}
+	ep := I.EP[c]
+	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
+		c = query[i]
+		offset, ok = I.C[c]
+		if !ok {
+			panic("Unknown character: " + string(c))
+		}
+		sp = offset + I.Occurence(c, sp-1)
+		ep = offset + I.Occurence(c, ep) - 1
+		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+	}
+	if sp <= ep {
+		for j := sp + 1; j <= ep; j++ {
+			if I.SSA[j] != I.SSA[sp] {
+				return -1, int(ep - sp + 1), i
+			}
+		}
+		return int(I.SSA[sp]), int(ep - sp + 1), i
 	} else {
-		return -1, int(ep-sp+1), i
+		return -1, int(ep - sp + 1), i
 	}
 }
 
@@ -211,7 +241,6 @@ func (I *IndexC) ReadFasta(file string) {
 				byte_array = append(byte_array, bytes.Trim(line, "\n\r ")...)
 			} else if len(byte_array) > 0 {
 				byte_array = append(byte_array, byte('|'))
-				fmt.Println(">", len(byte_array))
 			}
 			i++
 		}
@@ -236,26 +265,27 @@ func (I *IndexC) Show() {
 	}
 	fmt.Println()
 	fmt.Printf("\nSSA ")
-	for i:=0 ; i<len(I.SSA); i++ {
+	for i := 0; i < len(I.SSA); i++ {
 		fmt.Printf("%d ", I.SSA[i])
 	}
 	fmt.Println()
 	fmt.Println("SEQ", string(I.SEQ))
 }
+
 //-----------------------------------------------------------------------------
 func (I *IndexC) Check() {
 	fmt.Println("Checking...")
-	for i:=0; i<len(I.SYMBOLS); i++ {
+	for i := 0; i < len(I.SYMBOLS); i++ {
 		c := byte(I.SYMBOLS[i])
 		fmt.Printf("%c%6d %6d  [", c, I.Freq[c], I.C[c])
-		for j:=0; j<int(I.LEN); j++ {
-			fmt.Printf("%d ", I.Occurence(c,indexType(j)))
+		for j := 0; j < int(I.LEN); j++ {
+			fmt.Printf("%d ", I.Occurence(c, indexType(j)))
 		}
 		fmt.Printf("]\n")
 	}
 	if len(I.SEQ) > 0 {
-		a, b, c := I.Search(I.SEQ[0 : len(I.SEQ)-1])
-		fmt.Println("Search for SEQ returns", a, b, c)
+		seq, count := I.Search(I.SEQ[0 : len(I.SEQ)-1])
+		fmt.Println("Search for SEQ returns", seq, count)
 	}
 }
 

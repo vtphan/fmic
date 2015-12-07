@@ -53,7 +53,16 @@ s, e, _ := saved_idx.Search(pattern)
 See examples/guess_sequence.go
 
 ```
-	seq, count, _ := saved_idx.GuessSequence([]byte(q))
+	seq, count := saved_idx.Guess([]byte(q), randomized_round)
+```
+
+Input values:
+- the query, which is a byte slice, to be searched for.
+- the number of randomized round.  In each round, the search starts at a random position.  If this number is 0, the search returns the result of searching starting at the end of the query.
+
+To use randomization, user programs should initialize a random seed.  For example:
+```
+	rand.Seed(time.Now().UnixNano())
 ```
 
 Return values:
