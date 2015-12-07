@@ -43,7 +43,7 @@ SavedCompressedIndex takes as input a save_option, which has value 0, 1, or 2:
 API is subject to change.
 
 ```
-s, e, _ := saved_idx.Search(pattern)
+s, e := saved_idx.Search(pattern)
 ```
 **e-s+1** is the number of occurrences of the pattern in the indexed sequence.
 
