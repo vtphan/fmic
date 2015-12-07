@@ -29,12 +29,12 @@ func main() {
 		"ohlala",
 		"partialmatchfo",
 	}
-	fmt.Println("region\tmatches\ti\tquery")
+	fmt.Println("seq_id\tmatches\ti\tquery")
 	for _, q := range(queries) {
 		seq, count, j := saved_idx.GuessSequence([]byte(q))
 		fmt.Println(seq,"\t",count,"\t",j,"\t",q)
-		seq, count, j = idx.GuessSequence([]byte(q))
-		fmt.Println(seq,"\t",count,"\t",j,"\t",q)
+		// seq, count, j = idx.GuessSequence([]byte(q))
+		// fmt.Println(seq,"\t",count,"\t",j,"\t",q)
 	}
 	fmt.Println()
 }
