@@ -151,7 +151,7 @@ func (I *IndexC) Search(query []byte) (int, int) {
 	}
 	ep := I.EP[c]
 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
+	for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
