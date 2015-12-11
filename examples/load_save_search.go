@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/vtphan/fmi"
 	"github.com/vtphan/fmic"
+	"math/rand"
 	"os"
 	"runtime"
-	"math/rand"
 )
 
 //-----------------------------------------------------------------------------
@@ -16,7 +16,7 @@ func main() {
 		panic("Usage: go run program.go file.fasta")
 	}
 	fmt.Println("======BUILDING INDEX")
-	idx := fmic.CompressedIndex(os.Args[1], true, 10)
+	idx := fmic.CompressedIndex(os.Args[1], true, 1)
 	idx.Show()
 	idx.Check()
 
@@ -28,23 +28,26 @@ func main() {
 	saved_idx.Show()
 	saved_idx.Check()
 
-	fmt.Println("======TEST SEARCH")
+	fmt.Println("======Uncompressed INDEX")
 	uncompressed_idx := fmi.New(os.Args[1])
-	var x,y,z,x1,y1,z1 int
-	for i:=0; i<100000; i++ {
+	uncompressed_idx.Show()
+
+	fmt.Println("======TEST SEARCH")
+	var x, y, x1, y1 int
+	for i := 0; i < 100000; i++ {
 		a := rand.Int63n(int64(saved_idx.LEN))
 		b := rand.Int63n(int64(saved_idx.LEN))
-		if a!=b {
+		if a != b {
 			if a > b {
 				a, b = b, a
 			}
 			// fmt.Printf("%d %d %d ", i, a, b)
 			seq := fmi.SEQ[a:b]
-			x,y,z = saved_idx.Search(seq)
-			x1,y1,z1 = uncompressed_idx.Search(seq)
+			x, y = saved_idx.Search(seq)
+			x1, y1, _ = uncompressed_idx.Search(seq)
 			// fmt.Println(x,y,z, x==x1, y==y1, z==z1)
-			if x!=x1 || y!=y1 || z!=z1 {
-				fmt.Println("Panic:", i, a, b, x,y,z, x1,y1,z1)
+			if x != x1 || y != y1 {
+				fmt.Println("Panic:", i, a, b, "\t", x, saved_idx.SA[x], y, "\t", x1, uncompressed_idx.SA[x1], y1, string(seq))
 				panic("Something is wrong")
 			}
 			if i%10000 == 0 {
