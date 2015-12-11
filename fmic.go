@@ -195,7 +195,7 @@ func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 	c := query[start_pos]
 	sp, ok := I.C[c]
 	if !ok {
-		panic("Unknown character: " + string(c))
+		return -2, 0, 0
 	}
 	ep := I.EP[c]
 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
@@ -203,7 +203,7 @@ func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
-			panic("Unknown character: " + string(c))
+			return -2, 0, 0
 		}
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
