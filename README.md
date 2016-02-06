@@ -79,8 +79,8 @@ Assumptions:
 - Should work with sequences with fewer than 2^63 (or ~9223 quadrillion) characters.
 - User-definable compresion ratio as a trade off between size of index and search time.
 - Multiple goroutines to save/load index quickly.
-- Suffix array is built quickly using the SAIS algorithm. (Go's built-in suffix array is slow.)
+- Suffix array is built quickly using one of the fastest algorithms. (Go's built-in suffix array is slow.)
 
 ## Copyright
 
-Copyright by Vinhthuy Phan (2015).  Implementation of SAIS algorithm is done by [John Gallagher](https://github.com/jgallagher/gosaca).
+Copyright by Vinhthuy Phan (2015).  This software uses [John Gallagher](https://github.com/jgallagher/gosaca)'s implementation of Ge Nong's [OSACA](https://ge-nong.googlecode.com/files/tr-osaca-nong.pdf) algorithm.
