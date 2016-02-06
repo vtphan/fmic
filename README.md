@@ -80,3 +80,7 @@ Assumptions:
 - User-definable compresion ratio as a trade off between size of index and search time.
 - Multiple goroutines to save/load index quickly.
 - Suffix array is built quickly using the SAIS algorithm. (Go's built-in suffix array is slow.)
+
+## Copyright
+
+Copyright by Vinhthuy Phan (2015).  Implementation of SAIS algorithm is done by [John Gallagher](https://github.com/jgallagher/gosaca).
