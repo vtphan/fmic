@@ -7,6 +7,8 @@ package fmic
 
 type indexType int64
 
-// The number of sequences to be indexed together must be storable by a regionType
+
+// The number of sequences to be indexed together must be storable by a sequenceType
 // For example, use uint16 if there are no more than 2^16 sequences to be indexed at once.
+
 type sequenceType uint16
