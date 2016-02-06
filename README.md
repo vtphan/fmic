@@ -83,4 +83,4 @@ Assumptions:
 
 ## Copyright
 
-Copyright by Vinhthuy Phan (2015).  This software uses [John Gallagher](https://github.com/jgallagher/gosaca)'s implementation of Ge Nong's [OSACA](https://ge-nong.googlecode.com/files/tr-osaca-nong.pdf) algorithm.
+Copyright by Vinhthuy Phan (2015).  This software uses John Gallagher's implementation of Ge Nong's [OSACA](https://ge-nong.googlecode.com/files/tr-osaca-nong.pdf) algorithm.
