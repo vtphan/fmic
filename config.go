@@ -11,13 +11,11 @@ import (
 
 type indexType int64
 
-// The number of bytes of indexType
-const indexTypeBytes = uint(unsafe.Sizeof(indexType(0)))
-
-
 // The number of sequences to be indexed together must be storable by a regionType
 // For example, use uint16 if there are no more than 2^16 sequences to be indexed at once.
 type sequenceType uint16
 
-// The number of bytes of regionType
+
+// The number of bytes of indexType, sequenceType
+const indexTypeBytes = uint(unsafe.Sizeof(indexType(0)))
 const sequenceTypeBytes = uint(unsafe.Sizeof(sequenceType(0)))
