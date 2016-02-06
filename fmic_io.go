@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"sync"
+	"unsafe"
 )
 
 type Symb_OCC struct {
@@ -151,13 +152,13 @@ func LoadCompressedIndex(dir string) *IndexC {
 
 	go func() {
 		defer wg.Done()
-		I.SSA = _load_sequenceType(path.Join(dir, "ssa"), I.LEN, sequenceTypeBytes)
+		I.SSA = _load_sequenceType(path.Join(dir, "ssa"), I.LEN)
 	}()
 
 	go func() {
 		defer wg.Done()
 		if save_option == 1 || save_option == 2 {
-			I.SA = _load_indexType(path.Join(dir, "sa"), I.LEN, indexTypeBytes)
+			I.SA = _load_indexType(path.Join(dir, "sa"), I.LEN)
 		}
 	}()
 
@@ -173,7 +174,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	for _, symb := range I.SYMBOLS {
 		go func(symb int) {
 			defer wg.Done()
-			Symb_OCC_chan <- Symb_OCC{symb, _load_indexType(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE, indexTypeBytes)}
+			Symb_OCC_chan <- Symb_OCC{symb, _load_indexType(path.Join(dir, "occ."+string(symb)), I.OCC_SIZE)}
 		}(symb)
 	}
 	go func() {
@@ -188,11 +189,11 @@ func LoadCompressedIndex(dir string) *IndexC {
 }
 
 //-----------------------------------------------------------------------------
-func _load_indexType(filename string, length indexType, numBytes uint) []indexType {
+func _load_indexType(filename string, length indexType) []indexType {
 	f, err := os.Open(filename)
 	check_for_error(err)
 	defer f.Close()
-
+	numBytes := uint(unsafe.Sizeof(indexType(0)))
 	v := make([]indexType, length)
 
 	scanner := bufio.NewScanner(f)
@@ -207,11 +208,11 @@ func _load_indexType(filename string, length indexType, numBytes uint) []indexTy
 }
 
 //-----------------------------------------------------------------------------
-func _load_sequenceType(filename string, length indexType, numBytes uint) []sequenceType {
+func _load_sequenceType(filename string, length indexType) []sequenceType {
 	f, err := os.Open(filename)
 	check_for_error(err)
 	defer f.Close()
-
+	numBytes := uint(unsafe.Sizeof(sequenceType(0)))
 	v := make([]sequenceType, length)
 
 	scanner := bufio.NewScanner(f)
