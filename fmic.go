@@ -171,17 +171,50 @@ func (I *IndexC) Search(query []byte) (int, int) {
 
 func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
 	var seq, count int
+	// var start_pos, end_pos int
 	if randomized_round == 0 {
 		seq, count, _ = I._guess(query, len(query)-1)
 		return seq, count
 	} else {
 		for i := 0; i < randomized_round; i++ {
+			// start_pos = rand.Intn(len(query))
+			// seq, count, end_pos = I._guess(query, start_pos)
+			// fmt.Println(end_pos, start_pos, "<")
 			seq, count, _ = I._guess(query, rand.Intn(len(query)))
 			if seq >= 0 {
 				return seq, count
 			}
 		}
 		return -1, 0
+	}
+}
+
+//-----------------------------------------------------------------------------
+
+func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) int {
+	var seq1, seq2 int
+	if randomized_round == 0 {
+		seq1, _, _ = I._guess(query1, len(query1)-1)
+		seq2, _, _ = I._guess(query2, len(query2)-1)
+		if seq1 == seq2 {
+			return seq1
+		} else {
+			return -1
+		}
+	} else {
+		for i := 0; i < randomized_round; i++ {
+			seq1, _, _ = I._guess(query1, rand.Intn(len(query1)))
+			seq2, _, _ = I._guess(query2, rand.Intn(len(query2)))
+			if seq1 >= 0 && seq1 == seq2 {
+				return seq1
+			}
+		}
+		if seq1 == -1 {
+			return seq2
+		} else if seq2 == -1 {
+			return seq1
+		}
+		return -1
 	}
 }
 
