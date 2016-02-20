@@ -76,7 +76,7 @@ Assumptions:
 
 ## Guess which sequence contains a pair of queries
 ```
-	seq, count := saved_idx.Guess(q1, q2, randomized_round)
+	seq := saved_idx.Guess(q1, q2, randomized_round)
 ```
 
 Assumptions:
