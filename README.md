@@ -76,12 +76,12 @@ Assumptions:
 
 ## Guess which sequence contains a pair of queries
 ```
-	seq := saved_idx.Guess(q1, q2, randomized_round)
+	seq := saved_idx.Guess(q1, q2, randomized_round, maxInsert)
 ```
 
 Assumptions:
 
-+ q1 and q2 are close to each other.  Their distances must be smaller than maxInsert.
++ q1 and q2 are close to each other;  they should not be at most maxInsert characters apart from each other.
 
 ## Features
 

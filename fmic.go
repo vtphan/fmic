@@ -211,9 +211,8 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 }
 
 //-----------------------------------------------------------------------------
-func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) int {
+func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
 	var seq1, seq2, p1, p2, pos int
-	maxInsert := 1500
 	for i := 0; i < randomized_round; i++ {
 		pos = 10 + rand.Intn(len(query1)-10)
 		seq1, _, p1 = I._guess(query1, pos)
