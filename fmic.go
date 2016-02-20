@@ -196,12 +196,14 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 	if max > len(query2) {
 		max = len(query2)
 	}
+	maxInsert := 1500
 	for pos := 15; pos < max; pos ++ {
 		seq1, _, p1 = I._guess(query1, pos)
 		seq2, _, p2 = I._guess(query2, pos)
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-		if seq1 >= 0 && seq1 == seq2 && ((p1>=p2 && p1-p2<=1000) || (p2>p1 && p2-p1<=1000)){
+		if seq1 >= 0 && seq1 == seq2 &&
+			((p1>=p2 && p1-p2<=maxInsert) || (p2>p1 && p2-p1<=maxInsert)){
 			return seq1
 		}
 	}
@@ -211,6 +213,7 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 //-----------------------------------------------------------------------------
 func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) int {
 	var seq1, seq2, p1, p2, pos int
+	maxInsert := 1500
 	for i := 0; i < randomized_round; i++ {
 		pos = 10 + rand.Intn(len(query1)-10)
 		seq1, _, p1 = I._guess(query1, pos)
@@ -219,7 +222,8 @@ func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) i
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
 		// if seq1 >= 0 && seq1 == seq2 {
-		if seq1 >= 0 && seq1 == seq2 && ((p1>=p2 && p1-p2<=1000) || (p2>p1 && p2-p1<=1000)){
+		if seq1 >= 0 && seq1 == seq2 &&
+			((p1>=p2 && p1-p2<=maxInsert) || (p2>p1 && p2-p1<=maxInsert)){
 			return seq1
 		}
 	}
