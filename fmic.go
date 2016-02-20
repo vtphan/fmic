@@ -192,7 +192,8 @@ func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
 //-----------------------------------------------------------------------------
 
 func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) int {
-	var seq1, seq2 int
+	var seq1, seq2, p1, p2, pos int
+	// var count1, count2 int
 	if randomized_round == 0 {
 		seq1, _, _ = I._guess(query1, len(query1)-1)
 		seq2, _, _ = I._guess(query2, len(query2)-1)
@@ -203,17 +204,32 @@ func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round int) i
 		}
 	} else {
 		for i := 0; i < randomized_round; i++ {
-			seq1, _, _ = I._guess(query1, rand.Intn(len(query1)))
-			seq2, _, _ = I._guess(query2, rand.Intn(len(query2)))
-			if seq1 >= 0 && seq1 == seq2 {
+			pos = 10 + rand.Intn(len(query1)-10)
+			if pos <= 0 {
+				pos = len(query1)-1
+			}
+			seq1, _, p1 = I._guess(query1, pos)
+
+			pos = 10 + rand.Intn(len(query2)-10)
+			if pos <= 0 {
+				pos = len(query2)-1
+			}
+			seq2, _, p2 = I._guess(query2, pos)
+
+			// if seq1 >= 0 && seq1 == seq2 {
+			if seq1 >= 0 && seq1 == seq2 && ((p1>=p2 && p1-p2<=1000) || (p2>p1 && p2-p1<=1000)){
+				// fmt.Println(seq1, p2-p1, count1, count2, p1, p2)
 				return seq1
 			}
 		}
 		if seq1 == -1 {
+			// fmt.Println(seq2, -1, -1, count2, -1, p1)
 			return seq2
 		} else if seq2 == -1 {
+			// fmt.Println(seq1, -1, -1, count1, p1, -1)
 			return seq1
 		}
+		// fmt.Println(-1, -1, -1, -1, -1, -1)
 		return -1
 	}
 }
@@ -245,12 +261,12 @@ func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 	if sp <= ep {
 		for j := sp + 1; j <= ep; j++ {
 			if I.SSA[j] != I.SSA[sp] {
-				return -1, int(ep - sp + 1), i
+				return -1, int(ep - sp + 1), -1
 			}
 		}
-		return int(I.SSA[sp]), int(ep - sp + 1), i
+		return int(I.SSA[sp]), int(ep - sp + 1), int(I.SA[sp])
 	} else {
-		return -1, int(ep - sp + 1), i
+		return -1, int(ep - sp + 1), -1
 	}
 }
 
