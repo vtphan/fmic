@@ -53,7 +53,7 @@ API is subject to change.
 See examples/guess_sequence.go
 
 ```
-	seq, count := saved_idx.Guess([]byte(q), randomized_round)
+	seq, count := saved_idx.Guess(q, randomized_round)
 ```
 
 Input values:
@@ -73,6 +73,15 @@ Assumptions:
 
 + q must occur in one of the sequences.
 + But q might be slightly changed (e.g. due to sequencing error or genetic variation).
+
+## Guess which sequence contains a pair of queries
+```
+	seq, count := saved_idx.Guess(q1, q2, randomized_round)
+```
+
+Assumptions:
+
++ q1 and q2 are close to each other.  Their distances must be smaller than maxInsert.
 
 ## Features
 
