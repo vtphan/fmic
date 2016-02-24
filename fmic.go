@@ -31,6 +31,8 @@ type IndexC struct {
 	EP      map[byte]indexType // ending row/position of each symbol
 
 	LEN        indexType
+	LENS       []indexType
+	GENOME_ID  []string
 	OCC_SIZE   indexType
 	Freq       map[byte]indexType // Frequency of each symbol
 	M          int                // Compression ratio
@@ -197,13 +199,13 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 		max = len(query2)
 	}
 	maxInsert := 1500
-	for pos := 15; pos < max; pos ++ {
+	for pos := 15; pos < max; pos++ {
 		seq1, _, p1 = I._guess(query1, pos)
 		seq2, _, p2 = I._guess(query2, pos)
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
 		if seq1 == seq2 && seq1 != -1 &&
-			((p1>=p2 && p1-p2<=maxInsert) || (p2>p1 && p2-p1<=maxInsert)){
+			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
 			return seq1
 		}
 	}
@@ -221,12 +223,13 @@ func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxIn
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
 		if seq1 == seq2 && seq1 != -1 &&
-			((p1>=p2 && p1-p2<=maxInsert) || (p2>p1 && p2-p1<=maxInsert)){
+			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
 			return seq1
 		}
 	}
 	return -1
 }
+
 //-----------------------------------------------------------------------------
 func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 	if !I.Multiple {
@@ -276,17 +279,28 @@ func (I *IndexC) ReadFasta(file string) {
 	scanner := bufio.NewScanner(f)
 	byte_array := make([]byte, 0)
 	i := 0
+	cur_len := 0
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) > 0 {
+			line = bytes.Trim(line, "\n\r ")
 			if line[0] != '>' {
-				byte_array = append(byte_array, bytes.Trim(line, "\n\r ")...)
-			} else if len(byte_array) > 0 {
-				byte_array = append(byte_array, byte('|'))
+				byte_array = append(byte_array, line...)
+				cur_len += len(line)
+			} else {
+				I.GENOME_ID = append(I.GENOME_ID, string(line))
+				if cur_len != 0 {
+					I.LENS = append(I.LENS, indexType(cur_len))
+				}
+				cur_len = 0
+				if len(byte_array) > 0 {
+					byte_array = append(byte_array, byte('|'))
+				}
 			}
 			i++
 		}
 	}
+	I.LENS = append(I.LENS, indexType(cur_len))
 	I.SEQ = append(byte_array, byte('$'))
 }
 

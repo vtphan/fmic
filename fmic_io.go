@@ -106,6 +106,17 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 		fmt.Fprintf(w, "%s %d %d %d\n", string(symb), I.Freq[symb], I.C[symb], I.EP[symb])
 	}
 	w.Flush()
+
+	// save genome info
+	f, err = os.Create(path.Join(dir, "genome_info"))
+	check_for_error(err)
+	defer f.Close()
+	w = bufio.NewWriter(f)
+	for i := 0; i < len(I.GENOME_ID); i++ {
+		fmt.Fprintf(w, "%d %s\n", I.LENS[i], I.GENOME_ID[i])
+	}
+	w.Flush()
+
 	wg.Wait()
 }
 
@@ -137,6 +148,19 @@ func LoadCompressedIndex(dir string) *IndexC {
 		fmt.Sscanf(scanner.Text(), "%c%d%d%d", &symb, &freq, &c, &ep)
 		I.SYMBOLS = append(I.SYMBOLS, int(symb))
 		I.Freq[symb], I.C[symb], I.EP[symb] = freq, c, ep
+	}
+
+	// load genome_info
+	f, err = os.Open(path.Join(dir, "genome_info"))
+	check_for_error(err)
+	defer f.Close()
+	scanner = bufio.NewScanner(f)
+	var cur_len indexType
+	var cur_genome_id string
+	for scanner.Scan() {
+		fmt.Sscanf(scanner.Text(), "%d %s", &cur_len, &cur_genome_id)
+		I.GENOME_ID = append(I.GENOME_ID, cur_genome_id)
+		I.LENS = append(I.LENS, cur_len)
 	}
 
 	// Second, load Suffix array, BWT and OCC
@@ -198,11 +222,11 @@ func _load_indexType(filename string, length indexType) []indexType {
 
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
-	for i, b := 0,uint(0); scanner.Scan(); b++ {
-		if b==numBytes {
+	for i, b := 0, uint(0); scanner.Scan(); b++ {
+		if b == numBytes {
 			b, i = 0, i+1
 		}
-		v[i] += indexType(scanner.Bytes()[0]) << (b*8)
+		v[i] += indexType(scanner.Bytes()[0]) << (b * 8)
 	}
 	return v
 }
@@ -217,11 +241,11 @@ func _load_sequenceType(filename string, length indexType) []sequenceType {
 
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanBytes)
-	for i, b := 0,uint(0); scanner.Scan(); b++ {
-		if b==numBytes {
+	for i, b := 0, uint(0); scanner.Scan(); b++ {
+		if b == numBytes {
 			b, i = 0, i+1
 		}
-		v[i] += sequenceType(scanner.Bytes()[0]) << (b*8)
+		v[i] += sequenceType(scanner.Bytes()[0]) << (b * 8)
 	}
 	return v
 }

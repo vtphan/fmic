@@ -22,7 +22,7 @@ func main() {
 
 	fmt.Println("======SAVING INDEX")
 	idx.SaveCompressedIndex(2)
-
+	fmt.Println(">>>", idx.LENS, idx.GENOME_ID)
 	fmt.Println("======RELOADING INDEX")
 	saved_idx := fmic.LoadCompressedIndex(os.Args[1] + ".fmi")
 	saved_idx.Show()
