@@ -214,14 +214,17 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
-	var seq1, seq2, p1, p2, pos int
+	var seq1, seq2, p1, p2, c1, c2, pos int
 	for i := 0; i < randomized_round; i++ {
 		pos = 10 + rand.Intn(len(query1)-10)
-		seq1, _, p1 = I._guess(query1, pos)
+		fmt.Printf("left ")
+		seq1, c1, p1 = I._guess(query1, pos)
 		pos = 10 + rand.Intn(len(query2)-10)
-		seq2, _, p2 = I._guess(query2, pos)
+		fmt.Printf("right ")
+		seq2, c2, p2 = I._guess(query2, pos)
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
+		fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
 		if seq1 == seq2 && seq1 != -1 &&
 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
 			return seq1
@@ -249,6 +252,12 @@ func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 		offset, ok = I.C[c]
 		if !ok {
 			return -2, 0, 0
+		}
+		if ep-sp <= 10 {
+			for k := sp; k <= ep; k++ {
+				fmt.Printf("%d ", I.SSA[k])
+			}
+			fmt.Println("[", start_pos-i, "]")
 		}
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
@@ -288,7 +297,7 @@ func (I *IndexC) ReadFasta(file string) {
 				byte_array = append(byte_array, line...)
 				cur_len += len(line)
 			} else {
-				I.GENOME_ID = append(I.GENOME_ID, string(line))
+				I.GENOME_ID = append(I.GENOME_ID, string(line[1:]))
 				if cur_len != 0 {
 					I.LENS = append(I.LENS, indexType(cur_len))
 				}

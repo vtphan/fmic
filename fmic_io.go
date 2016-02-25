@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"sync"
 	"unsafe"
 )
@@ -108,7 +110,7 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 	w.Flush()
 
 	// save genome info
-	f, err = os.Create(path.Join(dir, "genome_info"))
+	f, err = os.Create(path.Join(dir, "genome_lengths"))
 	check_for_error(err)
 	defer f.Close()
 	w = bufio.NewWriter(f)
@@ -155,12 +157,12 @@ func LoadCompressedIndex(dir string) *IndexC {
 	check_for_error(err)
 	defer f.Close()
 	scanner = bufio.NewScanner(f)
-	var cur_len indexType
-	var cur_genome_id string
+	var items []string
 	for scanner.Scan() {
-		fmt.Sscanf(scanner.Text(), "%d %s", &cur_len, &cur_genome_id)
-		I.GENOME_ID = append(I.GENOME_ID, cur_genome_id)
-		I.LENS = append(I.LENS, cur_len)
+		items = strings.SplitN(strings.TrimSpace(scanner.Text()), " ", 2)
+		I.GENOME_ID = append(I.GENOME_ID, items[1])
+		cur_len, _ := strconv.Atoi(items[0])
+		I.LENS = append(I.LENS, indexType(cur_len))
 	}
 
 	// Second, load Suffix array, BWT and OCC
