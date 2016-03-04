@@ -167,6 +167,90 @@ func (I *IndexC) Search(query []byte) (int, int) {
 }
 
 //-----------------------------------------------------------------------------
+func (I *IndexC) flex_search(query []byte, start_pos int) map[sequenceType]indexType {
+	if !I.Multiple {
+		return map[sequenceType]indexType{}
+	}
+	var offset indexType
+	var i int
+	c := query[start_pos]
+	sp, ok := I.C[c]
+	if !ok {
+		return map[sequenceType]indexType{}
+	}
+	ep := I.EP[c]
+	for i = int(start_pos - 1); sp < ep && i >= 0 && ep-sp > 10; i-- {
+		c = query[i]
+		offset, ok = I.C[c]
+		if !ok {
+			return map[sequenceType]indexType{}
+		}
+		sp = offset + I.Occurence(c, sp-1)
+		ep = offset + I.Occurence(c, ep) - 1
+		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+	}
+	gid := make(map[sequenceType]indexType)
+	if (sp <= ep) && (ep-sp <= 10) {
+		for i := sp; i <= ep; i++ {
+			gid[I.SSA[i]] = I.SA[i]
+		}
+	}
+	return gid
+}
+
+//-----------------------------------------------------------------------------
+func (I *IndexC) FindGenomeD(query1 []byte, query2 []byte, maxInsert int) map[int]int {
+	var gid1, gid2 map[sequenceType]indexType
+	var pos int
+	max := len(query1)
+	if max > len(query2) {
+		max = len(query2)
+	}
+	for pos = 15; pos < max; pos++ {
+		gid1 = I.flex_search(query1, pos)
+		gid2 = I.flex_search(query2, pos)
+		out := make(map[int]int)
+		for gid, p1 := range gid1 {
+			if p2, ok := gid2[gid]; ok {
+				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
+					out[int(gid)] = 1
+				}
+			}
+		}
+		if len(out) > 0 {
+			// fmt.Println("\t", len(gid1), len(gid2), len(out))
+			return out
+		}
+	}
+	return map[int]int{}
+}
+
+//-----------------------------------------------------------------------------
+func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxInsert int) map[int]int {
+	var gid1, gid2 map[sequenceType]indexType
+	var pos int
+	for i := 0; i < randomized_round; i++ {
+		pos = 10 + rand.Intn(len(query1)-10)
+		gid1 = I.flex_search(query1, pos)
+		pos = 10 + rand.Intn(len(query2)-10)
+		gid2 = I.flex_search(query2, pos)
+		out := make(map[int]int)
+		for gid, p1 := range gid1 {
+			if p2, ok := gid2[gid]; ok {
+				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
+					out[int(gid)] = 1
+				}
+			}
+		}
+		if len(out) > 0 {
+			// fmt.Println("\t", len(gid1), len(gid2), len(out))
+			return out
+		}
+	}
+	return map[int]int{}
+}
+
+//-----------------------------------------------------------------------------
 // Guess which sequence contains the query.
 // If randomized_round is 0, there is no randomization. The search begins at the.
 //-----------------------------------------------------------------------------
@@ -214,89 +298,24 @@ func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
-	var seq1, seq2, p1, p2, c1, c2, pos int
+	var seq1, seq2, p1, p2, pos int
+	// var c1, c2 int
 	for i := 0; i < randomized_round; i++ {
 		pos = 10 + rand.Intn(len(query1)-10)
-		fmt.Printf("left ")
-		seq1, c1, p1 = I._guess(query1, pos)
+		// fmt.Printf("left ")
+		seq1, _, p1 = I._guess(query1, pos)
 		pos = 10 + rand.Intn(len(query2)-10)
-		fmt.Printf("right ")
-		seq2, c2, p2 = I._guess(query2, pos)
+		// fmt.Printf("right ")
+		seq2, _, p2 = I._guess(query2, pos)
 
 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-		fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
+		// fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
 		if seq1 == seq2 && seq1 != -1 &&
 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
 			return seq1
 		}
 	}
 	return -1
-}
-
-//-----------------------------------------------------------------------------
-func (I *IndexC) flex_search(query []byte, start_pos int) map[sequenceType]indexType {
-	if !I.Multiple {
-		return map[sequenceType]indexType{}
-	}
-	var offset indexType
-	var i int
-	c := query[start_pos]
-	sp, ok := I.C[c]
-	if !ok {
-		return map[sequenceType]indexType{}
-	}
-	ep := I.EP[c]
-	for i = int(start_pos - 1); sp < ep && i >= 0 && ep-sp > 10; i-- {
-		c = query[i]
-		offset, ok = I.C[c]
-		if !ok {
-			return map[sequenceType]indexType{}
-		}
-		sp = offset + I.Occurence(c, sp-1)
-		ep = offset + I.Occurence(c, ep) - 1
-		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	}
-	gid := make(map[sequenceType]indexType)
-	if (sp <= ep) && (ep-sp <= 10) {
-		for i := sp; i <= ep; i++ {
-			gid[I.SSA[i]] = I.SA[i]
-		}
-	}
-	return gid
-}
-
-//-----------------------------------------------------------------------------
-func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxInsert int) map[int]int {
-	// var seq1, seq2, p1, p2, c1, c2, pos int
-	var gid1, gid2 map[sequenceType]indexType
-	var pos int
-	// for i := 0; i < randomized_round; i++ {
-	// 	pos = 10 + rand.Intn(len(query1)-10)
-	// 	gid1 = I.flex_search(query1, pos)
-	// 	pos = 10 + rand.Intn(len(query2)-10)
-	// 	gid2 = I.flex_search(query2, pos)
-
-	max := len(query1)
-	if max > len(query2) {
-		max = len(query2)
-	}
-	for pos = 15; pos < max; pos++ {
-		gid1 = I.flex_search(query1, pos)
-		gid2 = I.flex_search(query2, pos)
-		out := make(map[int]int)
-		for gid, p1 := range gid1 {
-			if p2, ok := gid2[gid]; ok {
-				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
-					out[int(gid)] = 1
-				}
-			}
-		}
-		if len(out) > 0 {
-			// fmt.Println("\t", len(gid1), len(gid2), len(out))
-			return out
-		}
-	}
-	return map[int]int{}
 }
 
 //-----------------------------------------------------------------------------
@@ -319,12 +338,12 @@ func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
 		if !ok {
 			return -2, 0, 0
 		}
-		if ep-sp <= 10 {
-			for k := sp; k <= ep; k++ {
-				fmt.Printf("%d ", I.SSA[k])
-			}
-			fmt.Println("[", start_pos-i, "]")
-		}
+		// if ep-sp <= 10 {
+		// 	for k := sp; k <= ep; k++ {
+		// 		fmt.Printf("%d ", I.SSA[k])
+		// 	}
+		// 	fmt.Println("[", start_pos-i, "]")
+		// }
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
 		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
