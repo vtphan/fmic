@@ -16,9 +16,9 @@ func main() {
 		panic("Usage: go run program.go file.fasta")
 	}
 	fmt.Println("======BUILDING INDEX")
-	idx := fmic.CompressedIndex(os.Args[1], true, 1)
+	idx := fmic.CompressedIndex(os.Args[1], true, 2)
 	// idx.Show()
-	// idx.Check()
+	idx.Check()
 
 	fmt.Println("======SAVING INDEX")
 	idx.SaveCompressedIndex(2)
@@ -44,11 +44,11 @@ func main() {
 				a, b = b, a
 			}
 			seq := fmi.SEQ[a:b]
-			fmt.Printf("%d %d %d %s\n", i, a, b, string(seq))
 			x, y = saved_idx.Search(seq)
 			x1, y1, _ = uncompressed_idx.Search(seq)
 			// fmt.Println(x,y,z, x==x1, y==y1, z==z1)
-			if x-y != x1-y1 {
+			fmt.Printf("%d %d %d %d %d %s\n", i, a, b, y-x, y1-x1, string(seq))
+			if y-x != y1-x1 {
 				fmt.Println("Panic:", i, a, b, "\t", x, saved_idx.SA[x], y, "\t", x1, uncompressed_idx.SA[x1], y1, string(seq))
 				panic("Something is wrong")
 			}

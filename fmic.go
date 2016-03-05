@@ -152,7 +152,7 @@ func (I *IndexC) Search(query []byte) (int, int) {
 		panic("Unknown character: " + string(c))
 	}
 	ep := I.EP[c]
-	fmt.Println(i, string(c), sp, ep)
+	// fmt.Println(i, string(c), sp, ep)
 	for i = int(start_pos + 1); sp <= ep && i < len(query); i++ {
 		c = query[i]
 		offset, ok = I.C[c]
@@ -161,19 +161,8 @@ func (I *IndexC) Search(query []byte) (int, int) {
 		}
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
-		fmt.Println(i, string(c), sp, ep)
-		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+		// fmt.Println(i, string(c), sp, ep)
 	}
-	// for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
-	// 	c = query[i]
-	// 	offset, ok = I.C[c]
-	// 	if !ok {
-	// 		panic("Unknown character: " + string(c))
-	// 	}
-	// 	sp = offset + I.Occurence(c, sp-1)
-	// 	ep = offset + I.Occurence(c, ep) - 1
-	// 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	// }
 	return int(sp), int(ep)
 }
 
@@ -190,7 +179,7 @@ func (I *IndexC) flex_search(query []byte, start_pos int) map[sequenceType]index
 		return map[sequenceType]indexType{}
 	}
 	ep := I.EP[c]
-	for i = int(start_pos - 1); sp < ep && i >= 0 && ep-sp > 10; i-- {
+	for i = int(start_pos + 1); sp < ep && i < len(query) && ep-sp > 10; i++ {
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
@@ -383,17 +372,14 @@ func (I *IndexC) ReadFasta(file string) {
 
 	scanner := bufio.NewScanner(f)
 	byte_array := make([]byte, 0)
-	i, left, right := 0, 0, 0
+	i := 0
 	cur_len := 0
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) > 0 {
 			line = bytes.Trim(line, "\n\r ")
 			if line[0] != '>' {
-				for left, right = 0, len(line)-1; left < right; left, right = left+1, right-1 {
-				    line[left], line[right] = line[right], line[left]
-				}
-				byte_array = append(line, byte_array...)
+				byte_array = append(byte_array,line...)
 				cur_len += len(line)
 			} else {
 				I.GENOME_ID = append(I.GENOME_ID, string(line[1:]))
@@ -409,6 +395,10 @@ func (I *IndexC) ReadFasta(file string) {
 		}
 	}
 	I.LENS = append(I.LENS, indexType(cur_len))
+	// Reverse the sequence
+	for left, right := 0, len(byte_array)-1; left < right; left, right = left+1, right-1 {
+	    byte_array[left], byte_array[right] = byte_array[right], byte_array[left]
+	}
 	I.SEQ = append(byte_array, byte('$'))
 }
 

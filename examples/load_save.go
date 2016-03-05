@@ -13,6 +13,7 @@ func main() {
 		panic("Usage: go run program.go file.fasta")
 	}
 	idx := fmic.CompressedIndex(os.Args[1], true, 20)
+	fmt.Println(string(idx.SEQ))
 	idx.Show()
 	idx.Check()
 	fmt.Println("======SAVING INDEX")
