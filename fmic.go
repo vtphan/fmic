@@ -1,6 +1,6 @@
 /*
    Copyright 2015 Vinhthuy Phan
-	Compressed FM index.
+	Reversed Compressed FM index.
 */
 package fmic
 
