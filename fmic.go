@@ -152,8 +152,8 @@ func (I *IndexC) Search(query []byte) (int, int) {
 		panic("Unknown character: " + string(c))
 	}
 	ep := I.EP[c]
-	fmt.Println(string(c), sp, ep)
-	for i = int(start_pos + 1); sp <= ep && i >= 0; i++ {
+	fmt.Println(i, string(c), sp, ep)
+	for i = int(start_pos + 1); sp <= ep && i < len(query); i++ {
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
@@ -161,7 +161,7 @@ func (I *IndexC) Search(query []byte) (int, int) {
 		}
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
-		fmt.Println(string(c), sp, ep)
+		fmt.Println(i, string(c), sp, ep)
 		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
 	}
 	// for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
@@ -453,8 +453,10 @@ func (I *IndexC) Check() {
 	if len(I.SEQ) > 0 {
 		S := make([]byte, len(I.SEQ))
 		for i:=0; i<len(S); i++ {
-			S[i] = I.SEQ[len(I.SEQ) - i - 1]
+			S[i] = I.SEQ[len(S) - i - 1]
 		}
+		S = S[1:]
+		fmt.Println(string(S))
 		ep, sp := I.Search(S)
 		fmt.Println("Search for SEQ returns", sp, ep)
 	}

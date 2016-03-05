@@ -37,18 +37,18 @@ func main() {
 	fmt.Println("======TEST SEARCH")
 	var x, y, x1, y1 int
 	for i := 0; i < 100000; i++ {
-		a := rand.Int63n(int64(saved_idx.LEN))
-		b := rand.Int63n(int64(saved_idx.LEN))
+		a := rand.Int63n(int64(saved_idx.LEN)-1)
+		b := rand.Int63n(int64(saved_idx.LEN)-1)
 		if a != b {
 			if a > b {
 				a, b = b, a
 			}
-			// fmt.Printf("%d %d %d ", i, a, b)
 			seq := fmi.SEQ[a:b]
+			fmt.Printf("%d %d %d %s\n", i, a, b, string(seq))
 			x, y = saved_idx.Search(seq)
 			x1, y1, _ = uncompressed_idx.Search(seq)
 			// fmt.Println(x,y,z, x==x1, y==y1, z==z1)
-			if x != x1 || y != y1 {
+			if x-y != x1-y1 {
 				fmt.Println("Panic:", i, a, b, "\t", x, saved_idx.SA[x], y, "\t", x1, uncompressed_idx.SA[x1], y1, string(seq))
 				panic("Something is wrong")
 			}
