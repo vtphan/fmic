@@ -153,7 +153,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 	}
 
 	// load genome_info
-	f, err = os.Open(path.Join(dir, "genome_info"))
+	f, err = os.Open(path.Join(dir, "genome_lengths"))
 	check_for_error(err)
 	defer f.Close()
 	scanner = bufio.NewScanner(f)
