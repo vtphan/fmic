@@ -43,8 +43,8 @@ func main() {
 			if a > b {
 				a, b = b, a
 			}
-			// fmt.Printf("%d %d %d ", i, a, b)
 			seq := fmi.SEQ[a:b]
+			fmt.Printf("%d %d %d %s\n", i, a, b, string(seq))
 			x, y = saved_idx.Search(seq)
 			x1, y1, _ = uncompressed_idx.Search(seq)
 			// fmt.Println(x,y,z, x==x1, y==y1, z==z1)
