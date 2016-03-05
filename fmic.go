@@ -145,15 +145,14 @@ func (I *IndexC) Occurence(c byte, pos indexType) indexType {
 func (I *IndexC) Search(query []byte) (int, int) {
 	var offset indexType
 	var i int
-	start_pos := len(query) - 1
+	start_pos := 0
 	c := query[start_pos]
 	sp, ok := I.C[c]
 	if !ok {
 		panic("Unknown character: " + string(c))
 	}
 	ep := I.EP[c]
-	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
+	for i = int(start_pos + 1); sp <= ep && i >= 0; i++ {
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
@@ -163,6 +162,16 @@ func (I *IndexC) Search(query []byte) (int, int) {
 		ep = offset + I.Occurence(c, ep) - 1
 		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
 	}
+	// for i = int(start_pos - 1); sp <= ep && i >= 0; i-- {
+	// 	c = query[i]
+	// 	offset, ok = I.C[c]
+	// 	if !ok {
+	// 		panic("Unknown character: " + string(c))
+	// 	}
+	// 	sp = offset + I.Occurence(c, sp-1)
+	// 	ep = offset + I.Occurence(c, ep) - 1
+	// 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+	// }
 	return int(sp), int(ep)
 }
 
@@ -255,110 +264,110 @@ func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxI
 // If randomized_round is 0, there is no randomization. The search begins at the.
 //-----------------------------------------------------------------------------
 
-func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
-	var seq, count int
-	// var start_pos, end_pos int
-	if randomized_round == 0 {
-		seq, count, _ = I._guess(query, len(query)-1)
-		return seq, count
-	} else {
-		for i := 0; i < randomized_round; i++ {
-			// start_pos = rand.Intn(len(query))
-			// seq, count, end_pos = I._guess(query, start_pos)
-			// fmt.Println(end_pos, start_pos, "<")
-			seq, count, _ = I._guess(query, rand.Intn(len(query)))
-			if seq >= 0 {
-				return seq, count
-			}
-		}
-		return -1, 0
-	}
-}
+// func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
+// 	var seq, count int
+// 	// var start_pos, end_pos int
+// 	if randomized_round == 0 {
+// 		seq, count, _ = I._guess(query, len(query)-1)
+// 		return seq, count
+// 	} else {
+// 		for i := 0; i < randomized_round; i++ {
+// 			// start_pos = rand.Intn(len(query))
+// 			// seq, count, end_pos = I._guess(query, start_pos)
+// 			// fmt.Println(end_pos, start_pos, "<")
+// 			seq, count, _ = I._guess(query, rand.Intn(len(query)))
+// 			if seq >= 0 {
+// 				return seq, count
+// 			}
+// 		}
+// 		return -1, 0
+// 	}
+// }
 
-//-----------------------------------------------------------------------------
-func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
-	var seq1, seq2, p1, p2 int
-	max := len(query1)
-	if max > len(query2) {
-		max = len(query2)
-	}
-	maxInsert := 1500
-	for pos := 15; pos < max; pos++ {
-		seq1, _, p1 = I._guess(query1, pos)
-		seq2, _, p2 = I._guess(query2, pos)
+// //-----------------------------------------------------------------------------
+// func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
+// 	var seq1, seq2, p1, p2 int
+// 	max := len(query1)
+// 	if max > len(query2) {
+// 		max = len(query2)
+// 	}
+// 	maxInsert := 1500
+// 	for pos := 15; pos < max; pos++ {
+// 		seq1, _, p1 = I._guess(query1, pos)
+// 		seq2, _, p2 = I._guess(query2, pos)
 
-		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-		if seq1 == seq2 && seq1 != -1 &&
-			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
-			return seq1
-		}
-	}
-	return -1
-}
+// 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
+// 		if seq1 == seq2 && seq1 != -1 &&
+// 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
+// 			return seq1
+// 		}
+// 	}
+// 	return -1
+// }
 
-//-----------------------------------------------------------------------------
-func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
-	var seq1, seq2, p1, p2, pos int
-	// var c1, c2 int
-	for i := 0; i < randomized_round; i++ {
-		pos = 10 + rand.Intn(len(query1)-10)
-		// fmt.Printf("left ")
-		seq1, _, p1 = I._guess(query1, pos)
-		pos = 10 + rand.Intn(len(query2)-10)
-		// fmt.Printf("right ")
-		seq2, _, p2 = I._guess(query2, pos)
+// //-----------------------------------------------------------------------------
+// func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
+// 	var seq1, seq2, p1, p2, pos int
+// 	// var c1, c2 int
+// 	for i := 0; i < randomized_round; i++ {
+// 		pos = 10 + rand.Intn(len(query1)-10)
+// 		// fmt.Printf("left ")
+// 		seq1, _, p1 = I._guess(query1, pos)
+// 		pos = 10 + rand.Intn(len(query2)-10)
+// 		// fmt.Printf("right ")
+// 		seq2, _, p2 = I._guess(query2, pos)
 
-		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-		// fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
-		if seq1 == seq2 && seq1 != -1 &&
-			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
-			return seq1
-		}
-	}
-	return -1
-}
+// 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
+// 		// fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
+// 		if seq1 == seq2 && seq1 != -1 &&
+// 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
+// 			return seq1
+// 		}
+// 	}
+// 	return -1
+// }
 
-//-----------------------------------------------------------------------------
-func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
-	if !I.Multiple {
-		return 0, -1, -1
-	}
-	var offset indexType
-	var i int
-	c := query[start_pos]
-	sp, ok := I.C[c]
-	if !ok {
-		return -2, 0, 0
-	}
-	ep := I.EP[c]
-	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
-		c = query[i]
-		offset, ok = I.C[c]
-		if !ok {
-			return -2, 0, 0
-		}
-		// if ep-sp <= 10 {
-		// 	for k := sp; k <= ep; k++ {
-		// 		fmt.Printf("%d ", I.SSA[k])
-		// 	}
-		// 	fmt.Println("[", start_pos-i, "]")
-		// }
-		sp = offset + I.Occurence(c, sp-1)
-		ep = offset + I.Occurence(c, ep) - 1
-		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-	}
-	if sp <= ep {
-		for j := sp + 1; j <= ep; j++ {
-			if I.SSA[j] != I.SSA[sp] {
-				return -1, int(ep - sp + 1), -1
-			}
-		}
-		return int(I.SSA[sp]), int(ep - sp + 1), int(I.SA[sp])
-	} else {
-		return -1, int(ep - sp + 1), -1
-	}
-}
+// //-----------------------------------------------------------------------------
+// func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
+// 	if !I.Multiple {
+// 		return 0, -1, -1
+// 	}
+// 	var offset indexType
+// 	var i int
+// 	c := query[start_pos]
+// 	sp, ok := I.C[c]
+// 	if !ok {
+// 		return -2, 0, 0
+// 	}
+// 	ep := I.EP[c]
+// 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+// 	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
+// 		c = query[i]
+// 		offset, ok = I.C[c]
+// 		if !ok {
+// 			return -2, 0, 0
+// 		}
+// 		// if ep-sp <= 10 {
+// 		// 	for k := sp; k <= ep; k++ {
+// 		// 		fmt.Printf("%d ", I.SSA[k])
+// 		// 	}
+// 		// 	fmt.Println("[", start_pos-i, "]")
+// 		// }
+// 		sp = offset + I.Occurence(c, sp-1)
+// 		ep = offset + I.Occurence(c, ep) - 1
+// 		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
+// 	}
+// 	if sp <= ep {
+// 		for j := sp + 1; j <= ep; j++ {
+// 			if I.SSA[j] != I.SSA[sp] {
+// 				return -1, int(ep - sp + 1), -1
+// 			}
+// 		}
+// 		return int(I.SSA[sp]), int(ep - sp + 1), int(I.SA[sp])
+// 	} else {
+// 		return -1, int(ep - sp + 1), -1
+// 	}
+// }
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) ReadFasta(file string) {
@@ -372,14 +381,17 @@ func (I *IndexC) ReadFasta(file string) {
 
 	scanner := bufio.NewScanner(f)
 	byte_array := make([]byte, 0)
-	i := 0
+	i, left, right := 0, 0, 0
 	cur_len := 0
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) > 0 {
 			line = bytes.Trim(line, "\n\r ")
 			if line[0] != '>' {
-				byte_array = append(byte_array, line...)
+				for left, right = 0, len(line)-1; left < right; left, right = left+1, right-1 {
+				    line[left], line[right] = line[right], line[left]
+				}
+				byte_array = append(line, byte_array...)
 				cur_len += len(line)
 			} else {
 				I.GENOME_ID = append(I.GENOME_ID, string(line[1:]))
@@ -434,8 +446,8 @@ func (I *IndexC) Check() {
 		fmt.Printf("]\n")
 	}
 	if len(I.SEQ) > 0 {
-		seq, count := I.Search(I.SEQ[0 : len(I.SEQ)-1])
-		fmt.Println("Search for SEQ returns", seq, count)
+		ep, sp := I.Search(I.SEQ[0 : len(I.SEQ)-1])
+		fmt.Println("Search for SEQ returns", sp, ep)
 	}
 }
 
