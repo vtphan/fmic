@@ -92,7 +92,8 @@ func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC 
 			I.END_POS = i
 		}
 		if I.Multiple {
-			I.SSA[i] = SID[I.SA[i]]
+			// I.SSA[i] = SID[I.SA[i]]
+			I.SSA[i] = sid - SID[I.SA[i]]   // This is because I.SEQ is reversed.
 		}
 	}
 
@@ -230,9 +231,9 @@ func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxI
 	var gid1, gid2 map[sequenceType]indexType
 	var pos int
 	for i := 0; i < randomized_round; i++ {
-		pos = 10 + rand.Intn(len(query1)-10)
+		pos = rand.Intn(len(query1)-10)
 		gid1 = I.flex_search(query1, pos)
-		pos = 10 + rand.Intn(len(query2)-10)
+		pos = rand.Intn(len(query2)-10)
 		gid2 = I.flex_search(query2, pos)
 		out := make(map[int]int)
 		for gid, p1 := range gid1 {
