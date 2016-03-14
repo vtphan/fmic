@@ -33,6 +33,7 @@ type IndexC struct {
 	LEN        indexType
 	LENS       []indexType
 	GENOME_ID  []string
+	GENOME_DES  []string
 	OCC_SIZE   indexType
 	Freq       map[byte]indexType // Frequency of each symbol
 	M          int                // Compression ratio
@@ -168,88 +169,133 @@ func (I *IndexC) Search(query []byte) (int, int) {
 }
 
 //-----------------------------------------------------------------------------
-func (I *IndexC) flex_search(query []byte, start_pos int) map[sequenceType]indexType {
-	if !I.Multiple {
-		return map[sequenceType]indexType{}
-	}
-	var offset indexType
+func (I *IndexC) regionSearch(query []byte, start_pos int) (int, int, map[sequenceType]indexType) {
+	const maxSize = 10
+	idSet := map[sequenceType]indexType{}
+	flag := true
+	var id sequenceType
+	var offset, pos indexType
 	var i int
 	c := query[start_pos]
 	sp, ok := I.C[c]
-	if !ok {
-		return map[sequenceType]indexType{}
+	if !I.Multiple || !ok {
+		return -1,-1,idSet
 	}
 	ep := I.EP[c]
-	for i = int(start_pos + 1); sp < ep && i < len(query) && ep-sp > 10; i++ {
+	for i = int(start_pos + 1); sp < ep && i < len(query); i++ {
+		if ep-sp <= maxSize && flag == true {
+			flag = false
+			for i := sp; i <= ep; i++ {
+				idSet[I.SSA[i]] = I.SA[i]
+			}
+			// If all regions are the same, return.  Else, continue.
+			if len(idSet) == 1 {
+				for id, pos = range idSet {
+					return int(id), int(pos), idSet
+				}
+			}
+		}
 		c = query[i]
 		offset, ok = I.C[c]
 		if !ok {
-			return map[sequenceType]indexType{}
+			return -1,-1,idSet
 		}
 		sp = offset + I.Occurence(c, sp-1)
 		ep = offset + I.Occurence(c, ep) - 1
-		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
 	}
-	gid := make(map[sequenceType]indexType)
-	if (sp <= ep) && (ep-sp <= 10) {
-		for i := sp; i <= ep; i++ {
-			gid[I.SSA[i]] = I.SA[i]
-		}
+	if sp == ep {
+		idSet[I.SSA[sp]] = I.SA[sp]
+		return int(I.SSA[sp]), int(I.SA[sp]), idSet
+	} else {
+		return -1,-1,idSet
 	}
-	return gid
 }
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) FindGenomeD(query1 []byte, query2 []byte, maxInsert int) map[int]int {
-	var gid1, gid2 map[sequenceType]indexType
-	var pos int
-	max := len(query1)
-	if max > len(query2) {
-		max = len(query2)
-	}
-	for pos = 15; pos < max; pos++ {
-		gid1 = I.flex_search(query1, pos)
-		gid2 = I.flex_search(query2, pos)
-		out := make(map[int]int)
-		for gid, p1 := range gid1 {
-			if p2, ok := gid2[gid]; ok {
+	id1, pos1, idSet1 := I.regionSearch(query1, 0)
+	id2, pos2, idSet2 := I.regionSearch(query2, 0)
+	out := map[int]int{}
+	// fmt.Println("\t",id1,pos1,idSet1,"\t",id2,pos2,idSet2)
+	if id1==id2 && id1!=-1 && ((pos1>=pos2 && int(pos1-pos2)<=maxInsert)||(pos2>pos1 && int(pos2-pos1)<=maxInsert)) {
+		out[int(id1)] = 1
+	} else {
+		for id, p1 := range idSet1 {
+			if p2, ok := idSet2[id]; ok && int(id)!=-1 {
 				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
-					out[int(gid)] = 1
+					out[int(id)] = 1
 				}
 			}
 		}
-		if len(out) > 0 {
-			// fmt.Println("\t", len(gid1), len(gid2), len(out))
-			return out
-		}
 	}
-	return map[int]int{}
+	return out
 }
 
 //-----------------------------------------------------------------------------
-func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxInsert int) map[int]int {
-	var gid1, gid2 map[sequenceType]indexType
-	var pos int
-	for i := 0; i < randomized_round; i++ {
-		pos = rand.Intn(len(query1)-10)
-		gid1 = I.flex_search(query1, pos)
-		pos = rand.Intn(len(query2)-10)
-		gid2 = I.flex_search(query2, pos)
-		out := make(map[int]int)
-		for gid, p1 := range gid1 {
-			if p2, ok := gid2[gid]; ok {
-				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
-					out[int(gid)] = 1
+func (I *IndexC) FindGenomeR(query1 []byte, query2 []byte, maxInsert int, rounds int) map[int]int {
+	k1, k2 := 0,0	// init round starts from fixed index
+	end := 20
+	regions := map[int]int{}
+	for i:=0; i<rounds; i++ {
+		id1, pos1, idSet1 := I.regionSearch(query1, k1)
+		id2, pos2, idSet2 := I.regionSearch(query2, k2)
+		out := map[int]int{}
+		if id1==id2 && id1!=-1 && ((pos1>=pos2 && int(pos1-pos2)<=maxInsert)||(pos2>pos1 && int(pos2-pos1)<=maxInsert)) {
+			// fmt.Println("1:", pos1, pos2, out)
+			out[int(id1)] = 1
+			return out
+		} else {
+			for id, p1 := range idSet1 {
+				if p2, ok := idSet2[id]; ok && int(id)!=-1 {
+					if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
+						out[int(id)] = 1
+						regions[int(id)]++
+					}
 				}
 			}
+			if len(out) == 1 {  // conservative
+				// fmt.Println("2:", pos1, pos2, out)
+				return out
+			}
 		}
-		if len(out) > 0 {
-			// fmt.Println("\t", len(gid1), len(gid2), len(out))
-			return out
-		}
+		k1 = rand.Intn(len(query1)-end)
+		k2 = rand.Intn(len(query2)-end)
 	}
+	// fail
+	// reg, max := -1, 0
+	// for r,count := range regions {
+	// 	if count > max {
+	// 		reg, max = r, count
+	// 	}
+	// }
+	// fmt.Println(">>>>Highest count is", reg, max)
+	// fmt.Println(">>>", regions)
 	return map[int]int{}
 }
+//-----------------------------------------------------------------------------
+// func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxInsert int) map[int]int {
+// 	var gid1, gid2 map[sequenceType]indexType
+// 	var pos int
+// 	for i := 0; i < randomized_round; i++ {
+// 		pos = rand.Intn(len(query1)-10)
+// 		gid1 = I.regionSearch(query1, pos)
+// 		pos = rand.Intn(len(query2)-10)
+// 		gid2 = I.regionSearch(query2, pos)
+// 		out := make(map[int]int)
+// 		for gid, p1 := range gid1 {
+// 			if p2, ok := gid2[gid]; ok {
+// 				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
+// 					out[int(gid)] = 1
+// 				}
+// 			}
+// 		}
+// 		if len(out) > 0 {
+// 			// fmt.Println("\t", len(gid1), len(gid2), len(out))
+// 			return out
+// 		}
+// 	}
+// 	return map[int]int{}
+// }
 
 //-----------------------------------------------------------------------------
 // Guess which sequence contains the query.
@@ -383,7 +429,9 @@ func (I *IndexC) ReadFasta(file string) {
 				byte_array = append(byte_array,line...)
 				cur_len += len(line)
 			} else {
-				I.GENOME_ID = append(I.GENOME_ID, string(line[1:]))
+				items := bytes.SplitN(line[1:], []byte{' '}, 2)
+				I.GENOME_ID = append(I.GENOME_ID, string(items[0]))
+				I.GENOME_DES = append(I.GENOME_DES, string(items[1]))
 				if cur_len != 0 {
 					I.LENS = append(I.LENS, indexType(cur_len))
 				}

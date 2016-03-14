@@ -115,7 +115,7 @@ func (I *IndexC) SaveCompressedIndex(save_option int) {
 	defer f.Close()
 	w = bufio.NewWriter(f)
 	for i := 0; i < len(I.GENOME_ID); i++ {
-		fmt.Fprintf(w, "%d %s\n", I.LENS[i], I.GENOME_ID[i])
+		fmt.Fprintf(w, "%d %s %s\n", I.LENS[i], I.GENOME_ID[i], I.GENOME_DES[i])
 	}
 	w.Flush()
 
@@ -159,9 +159,10 @@ func LoadCompressedIndex(dir string) *IndexC {
 	scanner = bufio.NewScanner(f)
 	var items []string
 	for scanner.Scan() {
-		items = strings.SplitN(strings.TrimSpace(scanner.Text()), " ", 2)
-		I.GENOME_ID = append(I.GENOME_ID, items[1])
+		items = strings.SplitN(strings.TrimSpace(scanner.Text()), " ", 3)
 		cur_len, _ := strconv.Atoi(items[0])
+		I.GENOME_ID = append(I.GENOME_ID, items[1])
+		I.GENOME_DES = append(I.GENOME_ID, items[2])
 		I.LENS = append(I.LENS, indexType(cur_len))
 	}
 
