@@ -54,6 +54,7 @@ func CompressedIndex(file string, multiple bool, compression_ratio int) *IndexC 
 
 	// GET THE SEQUENCE
 	I.ReadFasta(file)
+	//fmt.Println(I.SEQ)
 
 	// BUILD SUFFIX ARRAY
 	I.LEN = indexType(len(I.SEQ))
@@ -235,13 +236,18 @@ func (I *IndexC) FindGenomeD(query1 []byte, query2 []byte, maxInsert int) map[in
 func (I *IndexC) FindGenomeR(query1 []byte, query2 []byte, maxInsert int, rounds int) map[int]int {
 	k1, k2 := 0,0	// init round starts from fixed index
 	end := 20
+	//end := 0
 	regions := map[int]int{}
+	//rounds = 1
 	for i:=0; i<rounds; i++ {
 		id1, pos1, idSet1 := I.regionSearch(query1, k1)
+		// fmt.Println(id1, pos1, idSet1)
 		id2, pos2, idSet2 := I.regionSearch(query2, k2)
+		// fmt.Println(id2, pos2, idSet2)
+		// fmt.Println("------------")
 		out := map[int]int{}
 		if id1==id2 && id1!=-1 && ((pos1>=pos2 && int(pos1-pos2)<=maxInsert)||(pos2>pos1 && int(pos2-pos1)<=maxInsert)) {
-			// fmt.Println("1:", pos1, pos2, out)
+			//fmt.Println("1:", pos1, pos2, out)
 			out[int(id1)] = 1
 			return out
 		} else {
@@ -253,10 +259,12 @@ func (I *IndexC) FindGenomeR(query1 []byte, query2 []byte, maxInsert int, rounds
 					}
 				}
 			}
-			if len(out) == 1 {  // conservative
-				// fmt.Println("2:", pos1, pos2, out)
+			// if len(out) == 1 {  // conservative
+			if len(out) >= 1 {  // liberal
+				//fmt.Println("2:", pos1, pos2, out)
 				return out
 			}
+
 		}
 		k1 = rand.Intn(len(query1)-end)
 		k2 = rand.Intn(len(query2)-end)
@@ -273,139 +281,24 @@ func (I *IndexC) FindGenomeR(query1 []byte, query2 []byte, maxInsert int, rounds
 	return map[int]int{}
 }
 //-----------------------------------------------------------------------------
-// func (I *IndexC) FindGenome(query1 []byte, query2 []byte, randomized_round, maxInsert int) map[int]int {
-// 	var gid1, gid2 map[sequenceType]indexType
-// 	var pos int
-// 	for i := 0; i < randomized_round; i++ {
-// 		pos = rand.Intn(len(query1)-10)
-// 		gid1 = I.regionSearch(query1, pos)
-// 		pos = rand.Intn(len(query2)-10)
-// 		gid2 = I.regionSearch(query2, pos)
-// 		out := make(map[int]int)
-// 		for gid, p1 := range gid1 {
-// 			if p2, ok := gid2[gid]; ok {
-// 				if (p1 >= p2 && int(p1-p2) <= maxInsert) || (p2 > p1 && int(p2-p1) <= maxInsert) {
-// 					out[int(gid)] = 1
-// 				}
-// 			}
-// 		}
-// 		if len(out) > 0 {
-// 			// fmt.Println("\t", len(gid1), len(gid2), len(out))
-// 			return out
-// 		}
-// 	}
-// 	return map[int]int{}
-// }
 
-//-----------------------------------------------------------------------------
-// Guess which sequence contains the query.
-// If randomized_round is 0, there is no randomization. The search begins at the.
-//-----------------------------------------------------------------------------
-
-// func (I *IndexC) Guess(query []byte, randomized_round int) (int, int) {
-// 	var seq, count int
-// 	// var start_pos, end_pos int
-// 	if randomized_round == 0 {
-// 		seq, count, _ = I._guess(query, len(query)-1)
-// 		return seq, count
-// 	} else {
-// 		for i := 0; i < randomized_round; i++ {
-// 			// start_pos = rand.Intn(len(query))
-// 			// seq, count, end_pos = I._guess(query, start_pos)
-// 			// fmt.Println(end_pos, start_pos, "<")
-// 			seq, count, _ = I._guess(query, rand.Intn(len(query)))
-// 			if seq >= 0 {
-// 				return seq, count
-// 			}
-// 		}
-// 		return -1, 0
-// 	}
-// }
-
-// //-----------------------------------------------------------------------------
-// func (I *IndexC) GuessPairD(query1 []byte, query2 []byte) int {
-// 	var seq1, seq2, p1, p2 int
-// 	max := len(query1)
-// 	if max > len(query2) {
-// 		max = len(query2)
-// 	}
-// 	maxInsert := 1500
-// 	for pos := 15; pos < max; pos++ {
-// 		seq1, _, p1 = I._guess(query1, pos)
-// 		seq2, _, p2 = I._guess(query2, pos)
-
-// 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-// 		if seq1 == seq2 && seq1 != -1 &&
-// 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
-// 			return seq1
-// 		}
-// 	}
-// 	return -1
-// }
-
-// //-----------------------------------------------------------------------------
-// func (I *IndexC) GuessPair(query1 []byte, query2 []byte, randomized_round, maxInsert int) int {
-// 	var seq1, seq2, p1, p2, pos int
-// 	// var c1, c2 int
-// 	for i := 0; i < randomized_round; i++ {
-// 		pos = 10 + rand.Intn(len(query1)-10)
-// 		// fmt.Printf("left ")
-// 		seq1, _, p1 = I._guess(query1, pos)
-// 		pos = 10 + rand.Intn(len(query2)-10)
-// 		// fmt.Printf("right ")
-// 		seq2, _, p2 = I._guess(query2, pos)
-
-// 		// fmt.Println(seq1, p1, int(I.LEN)-p1+1, "|", seq2, p2, int(I.LEN)-p2+1)
-// 		// fmt.Println(seq1, seq2, "\t", c1, c2, "\t", p1, p2)
-// 		if seq1 == seq2 && seq1 != -1 &&
-// 			((p1 >= p2 && p1-p2 <= maxInsert) || (p2 > p1 && p2-p1 <= maxInsert)) {
-// 			return seq1
-// 		}
-// 	}
-// 	return -1
-// }
-
-// //-----------------------------------------------------------------------------
-// func (I *IndexC) _guess(query []byte, start_pos int) (int, int, int) {
-// 	if !I.Multiple {
-// 		return 0, -1, -1
-// 	}
-// 	var offset indexType
-// 	var i int
-// 	c := query[start_pos]
-// 	sp, ok := I.C[c]
-// 	if !ok {
-// 		return -2, 0, 0
-// 	}
-// 	ep := I.EP[c]
-// 	// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-// 	for i = int(start_pos - 1); sp < ep && i >= 0; i-- {
-// 		c = query[i]
-// 		offset, ok = I.C[c]
-// 		if !ok {
-// 			return -2, 0, 0
-// 		}
-// 		// if ep-sp <= 10 {
-// 		// 	for k := sp; k <= ep; k++ {
-// 		// 		fmt.Printf("%d ", I.SSA[k])
-// 		// 	}
-// 		// 	fmt.Println("[", start_pos-i, "]")
-// 		// }
-// 		sp = offset + I.Occurence(c, sp-1)
-// 		ep = offset + I.Occurence(c, ep) - 1
-// 		// fmt.Println(ep-sp+1, "\t", i, string(c), len(query))
-// 	}
-// 	if sp <= ep {
-// 		for j := sp + 1; j <= ep; j++ {
-// 			if I.SSA[j] != I.SSA[sp] {
-// 				return -1, int(ep - sp + 1), -1
-// 			}
-// 		}
-// 		return int(I.SSA[sp]), int(ep - sp + 1), int(I.SA[sp])
-// 	} else {
-// 		return -1, int(ep - sp + 1), -1
-// 	}
-// }
+func reverse_complement(s []byte) []byte {
+	rs := make([]byte, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] == 'A' {
+			rs[len(s)-i-1] = 'T'
+		} else if s[i] == 'T' {
+			rs[len(s)-i-1] = 'A'
+		} else if s[i] == 'C' {
+			rs[len(s)-i-1] = 'G'
+		} else if s[i] == 'G' {
+			rs[len(s)-i-1] = 'C'
+		} else {
+			rs[len(s)-i-1] = s[i]
+		}
+	}
+	return rs
+}
 
 //-----------------------------------------------------------------------------
 func (I *IndexC) ReadFasta(file string) {
@@ -418,37 +311,53 @@ func (I *IndexC) ReadFasta(file string) {
 	}
 
 	scanner := bufio.NewScanner(f)
-	byte_array := make([]byte, 0)
-	i := 0
+	var description string
+	var cur_seq, rc_seq []byte
 	cur_len := 0
+
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) > 0 {
 			line = bytes.Trim(line, "\n\r ")
 			if line[0] != '>' {
-				byte_array = append(byte_array,line...)
+				cur_seq = append(cur_seq,line...)
 				cur_len += len(line)
 			} else {
 				items := bytes.SplitN(line[1:], []byte{' '}, 2)
 				I.GENOME_ID = append(I.GENOME_ID, string(items[0]))
-				I.GENOME_DES = append(I.GENOME_DES, string(items[1]))
-				if cur_len != 0 {
+				if len(items) > 1 {
+					description = string(items[1])
+				} else {
+					description = "none"
+				}
+				I.GENOME_DES = append(I.GENOME_DES, description)
+				if len(cur_seq) > 0 {
+					rc_seq = reverse_complement(cur_seq)
+					cur_seq = append(cur_seq, []byte("NNNNNNNNNN")...)
+					cur_seq = append(cur_seq, rc_seq...)
+					cur_seq = append(cur_seq, byte('|'))
+					cur_len = cur_len * 2 + 10
 					I.LENS = append(I.LENS, indexType(cur_len))
+					I.SEQ = append(I.SEQ, cur_seq...)
 				}
 				cur_len = 0
-				if len(byte_array) > 0 {
-					byte_array = append(byte_array, byte('|'))
-				}
+				cur_seq = make([]byte, 0)
 			}
-			i++
 		}
 	}
-	I.LENS = append(I.LENS, indexType(cur_len))
-	// Reverse the sequence
-	for left, right := 0, len(byte_array)-1; left < right; left, right = left+1, right-1 {
-	    byte_array[left], byte_array[right] = byte_array[right], byte_array[left]
+	if len(cur_seq) > 0 {
+		rc_seq = reverse_complement(cur_seq)
+		cur_seq = append(cur_seq, []byte("NNNNNNNNNN")...)
+		cur_seq = append(cur_seq, rc_seq...)
+		cur_len = cur_len * 2 + 10
+		I.LENS = append(I.LENS, indexType(cur_len))
+		I.SEQ = append(I.SEQ, cur_seq...)
 	}
-	I.SEQ = append(byte_array, byte('$'))
+	// Reverse the sequence
+	for left, right := 0, len(I.SEQ)-1; left < right; left, right = left+1, right-1 {
+	    I.SEQ[left], I.SEQ[right] = I.SEQ[right], I.SEQ[left]
+	}
+	I.SEQ = append(I.SEQ, byte('$'))
 }
 
 //-----------------------------------------------------------------------------
