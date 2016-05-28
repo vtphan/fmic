@@ -162,7 +162,7 @@ func LoadCompressedIndex(dir string) *IndexC {
 		items = strings.SplitN(strings.TrimSpace(scanner.Text()), " ", 3)
 		cur_len, _ := strconv.Atoi(items[0])
 		I.GENOME_ID = append(I.GENOME_ID, items[1])
-		I.GENOME_DES = append(I.GENOME_ID, items[2])
+		I.GENOME_DES = append(I.GENOME_DES, items[2])
 		I.LENS = append(I.LENS, indexType(cur_len))
 	}
 
